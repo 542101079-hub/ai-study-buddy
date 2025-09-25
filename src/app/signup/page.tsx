@@ -153,10 +153,10 @@ export default function SignupPage() {
         <div className="absolute bottom-[-18%] left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-blue-500/25 blur-[240px]" />
       </div>
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="order-2 flex w-full flex-col justify-between border-t border-white/10 bg-white/5 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
+        <aside className="order-2 flex w-full flex-col justify-between border-t border-sky-500/25 bg-gradient-to-br from-sky-500/12 via-blue-500/8 to-indigo-500/20 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
           <div className="space-y-10">
             <div className="space-y-4">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-200">
+              <span className="inline-flex items-center rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-100">
                 AI Talent Path
               </span>
               <h2 className="max-w-lg text-3xl font-semibold leading-snug">
@@ -185,12 +185,12 @@ export default function SignupPage() {
         <div className="order-1 w-full px-6 py-10 sm:px-10 lg:order-2 lg:w-1/2 lg:px-12 lg:py-16">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="mt-12 max-w-xl">
-            <Card className="border-white/10 bg-white/10 text-white backdrop-blur-xl">
+            <Card className="border-sky-400/40 bg-sky-500/15 text-white backdrop-blur-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-3xl font-semibold">
                   创建学生求职者账号
                 </CardTitle>
-                <CardDescription className="text-base text-slate-200">
+                <CardDescription className="text-base text-sky-100/85">
                   输入基础信息，我们将为你生成个性化学习方案。
                 </CardDescription>
               </CardHeader>

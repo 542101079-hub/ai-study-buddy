@@ -19,9 +19,9 @@ import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 import { setSession } from "@/lib/session";
 
 const PROMISES = [
-  "\u4e13\u4eba\u52a9\u624b\u8ddf\u8e2a\u4f60\u7684\u6bcf\u4e2a\u5c0f\u76ee\u6807",
-  "\u81ea\u52a8\u5217\u5165\u6bcf\u5468\u7684\u9884\u7b97\u65f6\u95f4\u4e0e\u4f18\u5148\u7ea7",
-  "\u6839\u636e\u8fdb\u5ea6\u9010\u6b65\u63d0\u9192\u6253\u5361\u4e0e\u590d\u76d8",
+  "专人助手跟踪你的每个小目标",
+  "自动列入每周的预算时间与优先级",
+  "根据进度逐步提醒打卡与复盘",
 ];
 
 const EMAIL_PATTERN = /[^\\s@]+@[^\\s@]+\\.[^\\s@]+/;
@@ -52,24 +52,24 @@ export default function RegisterPage() {
     const nextErrors: FieldErrors = {};
 
     if (!name) {
-      nextErrors.name = "\u8bf7\u586b\u5199\u59d3\u540d\u3002";
+      nextErrors.name = "请填写姓名。";
     }
 
     if (!email) {
-      nextErrors.email = "\u8bf7\u586b\u5199\u90ae\u7bb1\u5730\u5740\u3002";
+      nextErrors.email = "请填写邮箱地址。";
     } else if (!EMAIL_PATTERN.test(email)) {
-      nextErrors.email = "\u8bf7\u8f93\u5165\u6709\u6548\u90ae\u7bb1\u5730\u5740\u3002";
+      nextErrors.email = "请输入有效邮箱地址。";
     }
 
     if (!password) {
-      nextErrors.password = "\u8bf7\u586b\u5199\u5bc6\u7801\u3002";
+      nextErrors.password = "请填写密码。";
     } else if (password.length < 6) {
-      nextErrors.password = "\u5bc6\u7801\u81f3\u5c11\u9700\u67096\u4f4d\u5b57\u7b26\u3002";
+      nextErrors.password = "密码至少需有6位字符。";
     }
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
-      setFormError("\u8bf7\u68c0\u67e5\u6807\u8bb0\u7684\u5b57\u6bb5\u3002");
+      setFormError("请检查标记的字段。");
       return;
     }
 
@@ -86,7 +86,7 @@ export default function RegisterPage() {
       router.replace("/dashboard");
     } catch (error) {
       console.error("register failed", error);
-      setFormError("\u6ce8\u518c\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002");
+      setFormError("注册失败，请稍后重试。");
     } finally {
       setLoading(false);
     }
@@ -100,25 +100,25 @@ export default function RegisterPage() {
         <div className="absolute right-1/5 bottom-1/4 h-[360px] w-[360px] rounded-full bg-sky-500/20 blur-[130px]" />
       </div>
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="hidden flex-1 flex-col justify-between border-t border-white/10 bg-white/5 px-6 py-12 text-white md:px-10 lg:px-12 lg:py-16 lg:flex">
+        <aside className="hidden flex-1 flex-col justify-between border-t border-sky-500/25 bg-gradient-to-br from-sky-500/12 via-blue-500/8 to-indigo-500/20 px-6 py-12 text-white md:px-10 lg:px-12 lg:py-16 lg:flex">
           <div className="space-y-10">
             <div className="space-y-4">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-200">
+              <span className="inline-flex items-center rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-100">
                 Launch Plan
               </span>
               <h2 className="max-w-lg text-3xl font-semibold leading-snug">
-                \u5f00\u542f\u4f60\u7684\u667a\u80fd\u5b66\u4e60\u8ba1\u5212\uff0c\u7531 AI \u62c5\u5fc3\u5e26\u8d70\u6bcf\u6b65\u6539\u8fdb\u3002
+                开启你的智能学习计划，由 AI 担心带走每步改进。
               </h2>
             </div>
             <StudyBuddyIllustration className="w-full" />
-            <ul className="space-y-4 text-sm text-slate-200">
+            <ul className="space-y-4 text-sm text-sky-100/85">
               {PROMISES.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4"
+                  className="flex items-start gap-3 rounded-xl border border-sky-400/35 bg-sky-500/12 p-4 text-sky-50"
                 >
                   <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/40 text-xs font-semibold text-white">
-                    \u2713
+                    ✓
                   </span>
                   <span>{item}</span>
                 </li>
@@ -126,25 +126,25 @@ export default function RegisterPage() {
             </ul>
           </div>
           <div className="text-xs text-slate-300">
-            \u6ce8\u518c\u5373\u53ef\u83b7\u5f97\u4e03\u5929\u521d\u59cb\u4f53\u9a8c\uff0c\u652f\u6301\u968f\u65f6\u5bfc\u51fa\u5168\u90e8\u8bad\u7ec3\u6570\u636e\u3002
+            注册即可获得七天初始体验，支持随时导出全部训练数据。
           </div>
         </aside>
         <div className="w-full px-6 py-12 md:px-10 lg:w-1/2 lg:px-12 lg:py-16">
-          <BrandLogo subtitle="AI\u667a\u80fd\u5b66\u4e60\u642d\u5b50" />
+          <BrandLogo subtitle="AI智能学习搭子" />
           <div className="mt-12 max-w-md">
-            <Card className="border-white/10 bg-white/10 text-white backdrop-blur-xl">
+            <Card className="border-sky-400/40 bg-sky-500/15 text-white backdrop-blur-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-3xl font-semibold">
-                  \u6b63\u5f0f\u52a0\u5165\u5b66\u4e60\u642d\u5b50
+                  正式加入学习搭子
                 </CardTitle>
-                <CardDescription className="text-base text-slate-200">
-                  \u8f93\u5165\u57fa\u7840\u4fe1\u606f\uff0c\u6211\u4eec\u5c06\u4e3a\u4f60\u751f\u6210\u4e2a\u6027\u5316\u5b66\u4e60\u65b9\u6848\u3002
+                <CardDescription className="text-base text-sky-100/85">
+                  输入基础信息，我们将为你生成个性化学习方案。
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <form className="space-y-5" onSubmit={handleSubmit} noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="name">\u59d3\u540d</Label>
+                    <Label htmlFor="name">姓名</Label>
                     <Input
                       id="name"
                       name="name"
@@ -162,7 +162,7 @@ export default function RegisterPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">\u90ae\u7bb1</Label>
+                    <Label htmlFor="email">邮箱</Label>
                     <Input
                       id="email"
                       name="email"
@@ -180,7 +180,7 @@ export default function RegisterPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">\u5bc6\u7801</Label>
+                    <Label htmlFor="password">密码</Label>
                     <Input
                       id="password"
                       name="password"
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                       </p>
                     )}
                     <p className="text-xs text-slate-300">
-                      \u63a8\u835010\u4f4d\u4ee5\u4e0a\uff0c\u5305\u62ec\u6570\u5b57\u4e0e\u5b57\u6bcd\u7ec4\u5408\u3002
+                      推荐10位以上，包括数字与字母组合。
                     </p>
                   </div>
                   {formError && (
@@ -209,13 +209,13 @@ export default function RegisterPage() {
                     </div>
                   )}
                   <Button type="submit" size="lg" disabled={loading} className="w-full">
-                    {loading ? "\u6b63\u5728\u5458\u70b9\u5b66\u4e60\u65c5\u7a0b..." : "\u7acb\u5373\u52a0\u5165\u5b66\u4e60\u65c5\u7a0b"}
+                    {loading ? "正在员点学习旅程..." : "立即加入学习旅程"}
                   </Button>
                 </form>
                 <p className="text-sm text-slate-300">
-                  \u5df2\u6709\u8d26\u53f7\uff1f
+                  已有账号？
                   <Button asChild variant="ghost" size="sm" className="px-1 text-sky-300">
-                    <Link href="/signin">\u7ee7\u7eed\u5b66\u4e60\u65c5\u7a0b</Link>
+                    <Link href="/signin">继续学习旅程</Link>
                   </Button>
                 </p>
               </CardContent>

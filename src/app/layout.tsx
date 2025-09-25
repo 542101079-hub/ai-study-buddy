@@ -7,17 +7,17 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "AI\u667a\u80fd\u5b66\u4e60\u642d\u5b50",
-    template: "%s | AI\u667a\u80fd\u5b66\u4e60\u642d\u5b50",
+    default: "AI智能学习搭子",
+    template: "%s | AI智能学习搭子",
   },
   description:
-    "AI Study Buddy \u4e3a\u4f60\u63d0\u4f9b\u4e2a\u6027\u5316\u5b66\u4e60\u89c4\u5212\u3001\u667a\u80fd\u7b54\u7591\u4e0e\u8fdb\u5ea6\u8ffd\u8e2a\uff0c\u966a\u4f34\u4f60\u4ece\u5165\u95e8\u5230\u5c31\u4e1a\u8fdb\u9636\u3002",
+    "AI Study Buddy 为你提供个性化学习规划、智能答疑与进度追踪，陪伴你从入门到就业进阶。",
   keywords: [
-    "AI \u5b66\u4e60\u52a9\u624b",
-    "\u667a\u80fd\u5b66\u4e60\u642d\u5b50",
-    "\u5b66\u4e60\u89c4\u5212",
-    "AI \u7b54\u7591",
-    "\u5b66\u4e60\u8ffd\u8e2a",
+    "AI 学习助手",
+    "智能学习搭子",
+    "学习规划",
+    "AI 答疑",
+    "学习追踪",
   ],
   metadataBase: new URL("https://ai-study-buddy.local"),
 };
@@ -43,20 +43,20 @@ export default function RootLayout({
           <footer className="border-t border-white/10 bg-slate-950/80 px-6 py-8 text-sm text-slate-300 sm:px-10">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-slate-200">
-                {"\u00A9 " + currentYear + " AI Study Buddy. \u4FDD\u7559\u6240\u6709\u6743\u5229\u3002"}
+                {"© " + currentYear + " AI Study Buddy. 保留所有权利。"}
               </p>
               <div className="flex flex-wrap items-center gap-4">
                 <a
                   href="mailto:hello@aistudybuddy.com"
                   className="transition-colors hover:text-white"
                 >
-                  {"\u8054\u7CFB hello@aistudybuddy.com"}
+                  {"联系 hello@aistudybuddy.com"}
                 </a>
                 <Link href="/privacy" className="transition-colors hover:text-white">
-                  {"\u9690\u79C1\u653F\u7B56"}
+                  {"隐私政策"}
                 </Link>
                 <Link href="/terms" className="transition-colors hover:text-white">
-                  {"\u670D\u52A1\u6761\u6B3E"}
+                  {"服务条款"}
                 </Link>
               </div>
             </div>

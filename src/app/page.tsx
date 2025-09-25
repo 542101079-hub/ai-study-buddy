@@ -97,20 +97,20 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <Card className="border-white/10 bg-white/5 text-white shadow-[0_25px_80px_rgba(79,70,229,0.18)]">
+          <Card className="border-sky-400/40 bg-sky-500/15 text-white shadow-[0_25px_80px_rgba(79,70,229,0.18)]">
             <CardHeader className="space-y-3">
               <CardTitle className="text-2xl">每天都有伙伴在你身旁</CardTitle>
-              <CardDescription className="text-base text-slate-200">
+              <CardDescription className="text-base text-sky-100/85">
                 贴合节奏的学习搭子，看板式掌握进展，复盘提醒和情绪播报随时跟进。
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-200">
-              <div className="rounded-lg border border-white/10 bg-slate-950/50 p-4">
+            <CardContent className="space-y-4 text-sm text-sky-100/80">
+              <div className="rounded-lg border border-sky-400/30 bg-sky-500/10 p-4 text-sky-50">
                 <p className="text-xs uppercase tracking-[0.3em] text-indigo-200">今日亮点</p>
                 <p className="mt-2 text-lg text-white">任务完成度 82%</p>
                 <p className="text-slate-300">下一个建议：完成面试行为题演练 1 轮。</p>
               </div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/50 p-4">
+              <div className="rounded-lg border border-sky-400/30 bg-sky-500/10 p-4 text-sky-50">
                 <p className="text-xs uppercase tracking-[0.3em] text-indigo-200">情感播报</p>
                 <p className="mt-2 text-lg text-white">保持良好状态，再走一步就能完成本周计划。</p>
               </div>
@@ -130,13 +130,13 @@ export default function HomePage() {
               <Card
                 key={feature.title}
                 className={cn(
-                  "border-white/10 bg-white/5 text-white transition-all duration-300",
-                  "hover:border-indigo-200/60 hover:bg-white/10 hover:shadow-[0_25px_60px_rgba(79,70,229,0.25)]",
+                  "border-sky-400/40 bg-sky-500/12 text-sky-50 transition-all duration-300",
+                  "hover:border-sky-300/70 hover:bg-sky-500/22 hover:text-white hover:shadow-[0_25px_60px_rgba(79,70,229,0.25)]",
                 )}
               >
                 <CardHeader className="space-y-2">
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-slate-200">
+                  <CardDescription className="text-sky-100/80">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -145,7 +145,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/10 px-8 py-12 text-white shadow-[0_35px_90px_rgba(79,70,229,0.2)] sm:px-12">
+        <section className="overflow-hidden rounded-2xl border border-sky-400/35 bg-sky-500/15 px-8 py-12 text-white shadow-[0_35px_90px_rgba(79,70,229,0.2)] sm:px-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <h3 className="text-2xl font-semibold">今天开始，让 AI 陪你把目标逐一实现</h3>
