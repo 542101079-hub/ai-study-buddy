@@ -97,13 +97,13 @@ export default function RegisterPage() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.18),_rgba(6,11,34,0.96))]" />
         <div className="absolute left-1/4 top-1/4 h-[480px] w-[480px] rounded-full bg-indigo-500/25 blur-[140px]" />
-        <div className="absolute right-1/5 bottom-1/4 h-[360px] w-[360px] rounded-full bg-purple-500/24 blur-[130px]" />
+        <div className="absolute right-1/5 bottom-1/4 h-[360px] w-[360px] rounded-full bg-violet-800/50 blur-[130px]" />
       </div>
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="hidden flex-1 flex-col justify-between border-t border-violet-500/35 bg-gradient-to-br from-violet-500/22 via-purple-500/18 to-indigo-500/24 px-6 py-12 text-white md:px-10 lg:px-12 lg:py-16 lg:flex">
+        <aside className="hidden flex-1 flex-col justify-between border-t border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 px-6 py-12 text-white md:px-10 lg:px-12 lg:py-16 lg:flex">
           <div className="space-y-10">
             <div className="space-y-4">
-              <span className="inline-flex items-center rounded-full bg-purple-500/24 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-100">
+              <span className="inline-flex items-center rounded-full bg-purple-500/24 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white/85">
                 Launch Plan
               </span>
               <h2 className="max-w-lg text-3xl font-semibold leading-snug">
@@ -111,11 +111,11 @@ export default function RegisterPage() {
               </h2>
             </div>
             <StudyBuddyIllustration className="w-full" />
-            <ul className="space-y-4 text-sm text-violet-100/85">
+            <ul className="space-y-4 text-sm text-white/90">
               {PROMISES.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 rounded-xl border border-violet-400/40 bg-violet-500/18 p-4 text-violet-50"
+                  className="flex items-start gap-3 rounded-xl border border-violet-700/60 bg-violet-800/55 p-4 text-white/90"
                 >
                   <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/40 text-xs font-semibold text-white">
                     ✓
@@ -125,19 +125,19 @@ export default function RegisterPage() {
               ))}
             </ul>
           </div>
-          <div className="text-xs text-slate-300">
+          <div className="text-xs text-white/85">
             注册即可获得七天初始体验，支持随时导出全部训练数据。
           </div>
         </aside>
         <div className="w-full px-6 py-12 md:px-10 lg:w-1/2 lg:px-12 lg:py-16">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="mt-12 max-w-md">
-            <Card className="border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 text-white backdrop-blur-xl">
+            <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-3xl font-semibold">
                   正式加入学习搭子
                 </CardTitle>
-                <CardDescription className="text-base text-violet-100/85">
+                <CardDescription className="text-base text-violet-100/95">
                   输入基础信息，我们将为你生成个性化学习方案。
                 </CardDescription>
               </CardHeader>

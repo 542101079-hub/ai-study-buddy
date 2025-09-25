@@ -98,10 +98,10 @@ export default function SigninPage() {
         <div className="absolute bottom-[-18%] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-500/25 blur-[230px]" />
       </div>
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="order-2 flex w-full flex-col justify-between border-t border-violet-500/35 bg-gradient-to-br from-violet-500/22 via-purple-500/18 to-indigo-500/24 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
+        <aside className="order-2 flex w-full flex-col justify-between border-t border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
           <div className="space-y-10">
             <div className="space-y-4">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-200">
+              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-100/85">
                 AI Study Buddy
               </span>
               <h2 className="max-w-md text-3xl font-semibold leading-snug">
@@ -113,9 +113,9 @@ export default function SigninPage() {
               {SIDE_NOTES.map((note) => (
                 <li
                   key={note}
-                  className="flex items-center gap-3 rounded-xl border border-violet-400/40 bg-violet-500/18 px-4 py-3 text-violet-50"
+                  className="flex items-center gap-3 rounded-xl border border-violet-700/60 bg-violet-800/55 px-4 py-3 text-white/90"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/45 text-sm font-semibold text-white">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-700/60 text-sm font-semibold text-white">
                     ★
                   </span>
                   <span>{note}</span>
@@ -123,17 +123,17 @@ export default function SigninPage() {
               ))}
             </ul>
           </div>
-          <div className="text-xs text-violet-100/80">
+          <div className="text-xs text-violet-100/90">
             公测阶段支持存储登录信息，随时可以清除。
           </div>
         </aside>
         <div className="order-1 w-full px-6 py-10 sm:px-10 lg:order-2 lg:w-1/2 lg:px-12 lg:py-16">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="mt-12 max-w-md">
-            <Card className="border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 text-white backdrop-blur-xl">
+            <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-3xl font-semibold">欢迎回来</CardTitle>
-                <CardDescription className="text-base text-violet-100/85">
+                <CardDescription className="text-base text-violet-100/95">
                   登录后立即铺开个性化学习路线与面试准备时间表。
                 </CardDescription>
               </CardHeader>
@@ -206,7 +206,7 @@ export default function SigninPage() {
                     {loading ? "正在同步学习旅程..." : "继续我的学习旅程"}
                   </Button>
                 </form>
-                <p className="text-sm text-violet-100/85">
+                <p className="text-sm text-violet-100/95">
                   没有账号？
                   <Button asChild variant="ghost" size="sm" className="px-1 text-violet-200">
                     <Link href="/signup">开启我的学习旅程</Link>

@@ -153,10 +153,10 @@ export default function SignupPage() {
         <div className="absolute bottom-[-18%] left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-blue-500/25 blur-[240px]" />
       </div>
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="order-2 flex w-full flex-col justify-between border-t border-violet-500/35 bg-gradient-to-br from-violet-500/22 via-purple-500/18 to-indigo-500/24 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
+        <aside className="order-2 flex w-full flex-col justify-between border-t border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
           <div className="space-y-10">
             <div className="space-y-4">
-              <span className="inline-flex items-center rounded-full bg-violet-500/25 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-100">
+              <span className="inline-flex items-center rounded-full bg-violet-500/25 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white/90">
                 AI Talent Path
               </span>
               <h2 className="max-w-lg text-3xl font-semibold leading-snug">
@@ -164,13 +164,13 @@ export default function SignupPage() {
               </h2>
             </div>
             <StudyBuddyIllustration className="w-full" />
-            <ul className="space-y-4 text-sm text-violet-100/90">
+            <ul className="space-y-4 text-sm text-white/92">
               {INSIGHTS.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 rounded-xl border border-violet-400/40 bg-violet-500/18 p-4 text-violet-100"
+                  className="flex items-start gap-3 rounded-xl border border-violet-700/60 bg-violet-800/55 p-4 text-white/90"
                 >
-                  <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/35 text-xs font-semibold text-white">
+                  <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-700/60 text-xs font-semibold text-white">
                     ★
                   </span>
                   <span>{item}</span>
@@ -178,19 +178,19 @@ export default function SignupPage() {
               ))}
             </ul>
           </div>
-          <div className="text-xs text-violet-100/85">
+          <div className="text-xs text-white/92">
             加入后按项目分类立即生成个性化提高方案。
           </div>
         </aside>
         <div className="order-1 w-full px-6 py-10 sm:px-10 lg:order-2 lg:w-1/2 lg:px-12 lg:py-16">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="mt-12 max-w-xl">
-            <Card className="border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 text-white backdrop-blur-xl">
+            <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-3xl font-semibold">
                   创建学生求职者账号
                 </CardTitle>
-                <CardDescription className="text-base text-violet-100/85">
+                <CardDescription className="text-base text-white/92">
                   输入基础信息，我们将为你生成个性化学习方案。
                 </CardDescription>
               </CardHeader>
@@ -286,22 +286,22 @@ export default function SignupPage() {
                             disabled={loading}
                             aria-pressed={isActive}
                             className={cn(
-                              "flex h-full flex-col gap-1 rounded-xl border border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 p-4 text-left text-violet-100 transition-all",
-                              "hover:border-violet-300/70 hover:bg-violet-500/30 hover:text-white",
+                              "flex h-full flex-col gap-1 rounded-xl border border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 p-4 text-left text-white/90 transition-all",
+                              "hover:border-violet-500/80 hover:bg-violet-800/65 hover:text-white",
                               isActive &&
-                                "border-indigo-300/60 bg-indigo-500/25 text-white shadow-[0_18px_45px_rgba(79,70,229,0.3)]",
+                                "border-indigo-400/70 bg-indigo-700/60 text-white shadow-[0_18px_45px_rgba(79,70,229,0.3)]",
                               loading && "cursor-not-allowed opacity-70",
                             )}
                           >
                             <span className="text-sm font-semibold text-white">{item.label}</span>
-                            <span className="text-xs text-indigo-100">{item.headline}</span>
-                            <span className="text-xs text-violet-100/80">{item.description}</span>
+                            <span className="text-xs text-white/80">{item.headline}</span>
+                            <span className="text-xs text-white/85">{item.description}</span>
                           </button>
                         );
                       })}
                     </div>
                     {stageMeta && (
-                      <div className="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-3 text-xs text-violet-100/90">
+                      <div className="rounded-lg border border-violet-700/60 bg-violet-800/55 px-4 py-3 text-xs text-white/90">
                         已选择：{stageMeta.label} · {stageMeta.headline}
                       </div>
                     )}
@@ -343,7 +343,7 @@ export default function SignupPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="flex items-start gap-3 text-sm text-violet-100/90">
+                    <label className="flex items-start gap-3 text-sm text-white/90">
                       <input
                         type="checkbox"
                         name="consent"
@@ -388,7 +388,7 @@ export default function SignupPage() {
                     {loading ? "正在点亮学习旅程..." : "开始规划学习旅程"}
                   </Button>
                 </form>
-                <p className="text-sm text-violet-100/85">
+                <p className="text-sm text-white/92">
                   已有账号？
                   <Button asChild variant="ghost" size="sm" className="px-1 text-violet-200">
                     <Link href="/signin">继续学习旅程</Link>

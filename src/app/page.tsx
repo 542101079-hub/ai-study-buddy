@@ -54,7 +54,7 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" className="text-violet-100/90 hover:text-white">
+            <Button asChild variant="ghost" className="text-white/88 hover:text-white">
               <Link href="/signin">登录</Link>
             </Button>
             <Button asChild className="shadow-[0_12px_40px_rgba(59,130,246,0.32)]">
@@ -74,7 +74,7 @@ export default function HomePage() {
               <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
                 你的 AI 智能学习搭子
               </h1>
-              <p className="max-w-xl text-base text-violet-100/90 sm:text-lg">
+              <p className="max-w-xl text-base text-white/88 sm:text-lg">
                 从规划到答疑，从进度追踪到就业进阶，一位始终在线的 AI 学伴，帮助你把每一次练习都对准目标。
               </p>
             </div>
@@ -82,11 +82,11 @@ export default function HomePage() {
               <Button asChild size="lg" className="px-7 text-base shadow-[0_18px_45px_rgba(79,70,229,0.35)]">
                 <Link href="/signup">免费开启我的学习旅程</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-violet-400/60 text-violet-100 hover:border-violet-300 hover:bg-violet-500/25 hover:text-white">
+              <Button asChild size="lg" variant="outline" className="border-violet-600/70 text-white/85 hover:border-violet-400 hover:bg-violet-800/60 hover:text-white">
                 <Link href="/signin">我已有账号，立即登录</Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-6 text-sm text-violet-100/85">
+            <div className="flex flex-wrap gap-6 text-sm text-white/90">
               <div>
                 <p className="text-3xl font-semibold text-white">92%</p>
                 <p>坚持打卡 4 周以上的学员完成主要阶段目标</p>
@@ -97,20 +97,20 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <Card className="border-violet-500/35 bg-gradient-to-br from-violet-500/25 via-purple-500/22 to-indigo-500/25 text-white shadow-[0_25px_80px_rgba(79,70,229,0.18)]">
+          <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white shadow-[0_25px_80px_rgba(79,70,229,0.18)]">
             <CardHeader className="space-y-3">
               <CardTitle className="text-2xl">每天都有伙伴在你身旁</CardTitle>
-              <CardDescription className="text-base text-violet-100/85">
+              <CardDescription className="text-base text-white/90">
                 贴合节奏的学习搭子，看板式掌握进展，复盘提醒和情绪播报随时跟进。
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-violet-100/80">
-              <div className="rounded-lg border border-violet-400/40 bg-violet-500/18 p-4 text-violet-50">
+            <CardContent className="space-y-4 text-sm text-white/85">
+              <div className="rounded-lg border border-violet-700/60 bg-violet-800/55 p-4 text-white/90">
                 <p className="text-xs uppercase tracking-[0.3em] text-indigo-200">今日亮点</p>
                 <p className="mt-2 text-lg text-white">任务完成度 82%</p>
-                <p className="text-violet-100/85">下一个建议：完成面试行为题演练 1 轮。</p>
+                <p className="text-white/90">下一个建议：完成面试行为题演练 1 轮。</p>
               </div>
-              <div className="rounded-lg border border-violet-400/40 bg-violet-500/18 p-4 text-violet-50">
+              <div className="rounded-lg border border-violet-700/60 bg-violet-800/55 p-4 text-white/90">
                 <p className="text-xs uppercase tracking-[0.3em] text-indigo-200">情感播报</p>
                 <p className="mt-2 text-lg text-white">保持良好状态，再走一步就能完成本周计划。</p>
               </div>
@@ -121,7 +121,7 @@ export default function HomePage() {
         <section className="space-y-10">
           <div className="space-y-3">
             <h2 className="text-3xl font-semibold text-white">AI 学伴的 5 大能力</h2>
-            <p className="max-w-2xl text-base text-violet-100/85">
+            <p className="max-w-2xl text-base text-white/90">
               将学习路径拆成可执行的行动，用数据与反馈伴随你坚持下去。
             </p>
           </div>
@@ -130,13 +130,13 @@ export default function HomePage() {
               <Card
                 key={feature.title}
                 className={cn(
-                  "border-violet-400/40 bg-violet-500/18 text-violet-50 transition-all duration-300",
-                  "hover:border-violet-500/80 hover:bg-violet-700/55 hover:text-white hover:shadow-[0_30px_70px_rgba(76,29,149,0.45)]",
+                  "border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white/90 transition-all duration-300",
+                  "hover:border-violet-600/80 hover:bg-violet-800/65 hover:text-white hover:shadow-[0_35px_80px_rgba(56,0,94,0.45)]",
                 )}
               >
                 <CardHeader className="space-y-2">
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-violet-100/90">
+                  <CardDescription className="text-white/92">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -145,19 +145,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-violet-500/40 bg-gradient-to-br from-violet-500/22 via-purple-500/20 to-indigo-500/24 px-8 py-12 text-white shadow-[0_35px_90px_rgba(79,70,229,0.2)] sm:px-12">
+        <section className="overflow-hidden rounded-2xl border border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 px-8 py-12 text-white shadow-[0_45px_110px_rgba(56,0,94,0.35)] sm:px-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <h3 className="text-2xl font-semibold">今天开始，让 AI 陪你把目标逐一实现</h3>
-              <p className="max-w-xl text-sm text-violet-100/90">
+              <p className="max-w-xl text-sm text-white/88">
                 选择适合你的阶段，15 秒完成注册，立即同步学习节奏与陪伴提醒。
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="px-6 shadow-[0_12px_35px_rgba(59,130,246,0.32)]">
+              <Button asChild size="lg" className="px-6 bg-gradient-to-r from-violet-700 via-purple-600 to-indigo-600 shadow-[0_18px_50px_rgba(56,0,94,0.45)] hover:from-violet-600 hover:via-purple-500 hover:to-indigo-500">
                 <Link href="/signup">免费注册</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-violet-400/60 text-violet-100 hover:border-violet-300 hover:bg-violet-500/25 hover:text-white">
+              <Button asChild size="lg" variant="outline" className="border-violet-600/70 text-white/85 hover:border-violet-400 hover:bg-violet-800/60 hover:text-white">
                 <Link href="/signin">我先体验登录</Link>
               </Button>
             </div>

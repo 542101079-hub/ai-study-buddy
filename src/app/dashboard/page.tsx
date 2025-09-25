@@ -83,11 +83,11 @@ export default function DashboardPage() {
         <header className="flex flex-wrap items-center justify-between gap-6">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="flex items-center gap-4">
-            <div className="text-right text-sm text-violet-100/90">
+            <div className="text-right text-sm text-white/92">
               <p>欢迎回来，{displayName}！</p>
-              <p className="text-xs text-violet-200/80">今天也一起保持动力。</p>
+              <p className="text-xs text-white/85">今天也一起保持动力。</p>
             </div>
-            <Button variant="outline" className="border-violet-500/45 text-white hover:bg-purple-500/24" onClick={handleSignOut}>
+            <Button variant="outline" className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" onClick={handleSignOut}>
               退出
             </Button>
           </div>
@@ -96,15 +96,15 @@ export default function DashboardPage() {
         <main className="flex flex-1 flex-col gap-12 pb-12">
           <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {HIGHLIGHTS.map((item) => (
-              <Card key={item.title} className="border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 text-white backdrop-blur-xl">
+              <Card key={item.title} className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
                 <CardHeader className="space-y-2">
-                  <CardTitle className="text-sm font-medium text-violet-100/90">
+                  <CardTitle className="text-sm font-medium text-white/92">
                     {item.title}
                   </CardTitle>
                   <p className="text-3xl font-semibold text-white">{item.value}</p>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-sm text-violet-100/80">
+                  <CardDescription className="text-sm text-white/90">
                     {item.description}
                   </CardDescription>
                 </CardContent>
@@ -113,17 +113,17 @@ export default function DashboardPage() {
           </section>
 
           <section className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <Card className="border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 text-white backdrop-blur-xl">
+            <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                   <CardTitle className="text-2xl font-semibold">
                     路径静猜调整
                   </CardTitle>
-                  <CardDescription className="text-sm text-violet-100/80">
+                  <CardDescription className="text-sm text-white/90">
                     根据最新进度与优先级，提前安排的策略建议已到达。
                   </CardDescription>
                 </div>
-                <Button size="sm" className="bg-violet-600/90 hover:bg-violet-500">
+                <Button size="sm" className="bg-violet-900/70 hover:bg-violet-700">
                   更新计划
                 </Button>
               </CardHeader>
@@ -131,15 +131,15 @@ export default function DashboardPage() {
                 {QUICK_ACTIONS.map((action) => (
                   <div
                     key={action.title}
-                    className="rounded-2xl border border-violet-400/40 bg-violet-500/18 p-4 text-violet-50"
+                    className="rounded-2xl border border-violet-700/60 bg-violet-800/55 p-4 text-white/90"
                   >
                     <h3 className="text-base font-semibold text-white">
                       {action.title}
                     </h3>
-                    <p className="mt-2 text-sm text-violet-100/80">
+                    <p className="mt-2 text-sm text-white/90">
                       {action.description}
                     </p>
-                    <Button variant="ghost" size="sm" className="mt-4 px-1 text-violet-200">
+                    <Button variant="ghost" size="sm" className="mt-4 px-1 text-white/85">
                       {action.cta}
                     </Button>
                   </div>
@@ -147,16 +147,16 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-between border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/26 text-white backdrop-blur-xl">
+            <Card className="flex flex-col justify-between border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-2">
                 <CardTitle className="text-2xl font-semibold">
                   动力体系
                 </CardTitle>
-                <CardDescription className="text-sm text-violet-100/90">
+                <CardDescription className="text-sm text-white/92">
                   您的反馈帮助 AI 搭子调整动力方向，维持长期学习效率。
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm text-violet-100/85">
+              <CardContent className="space-y-4 text-sm text-white/90">
                 <p>
                   本周情绪倾向：
                   <span className="underline">优势活力</span>
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                 <p>
                   提醒建议：按时继续保持 25 分钟学习 + 5 分钟复盘的节奏。
                 </p>
-                <Button variant="outline" className="border-violet-500/50 text-violet-100 hover:bg-purple-500/24" size="sm">
+                <Button variant="outline" className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" size="sm">
                   设定提醒
                 </Button>
               </CardContent>
