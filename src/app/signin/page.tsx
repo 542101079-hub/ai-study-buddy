@@ -93,15 +93,15 @@ export default function SigninPage() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.22),_rgba(15,23,42,0.96))]" />
         <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(59,130,246,0.18)_0%,rgba(56,189,248,0.1)_40%,transparent_78%)] opacity-70" />
-        <div className="absolute left-[-8%] top-1/3 h-[380px] w-[380px] rounded-full bg-sky-400/30 blur-[180px]" />
+        <div className="absolute left-[-8%] top-1/3 h-[380px] w-[380px] rounded-full bg-purple-500/32 blur-[180px]" />
         <div className="absolute right-[-12%] top-1/4 h-[420px] w-[420px] rounded-full bg-indigo-500/30 blur-[210px]" />
         <div className="absolute bottom-[-18%] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-blue-500/25 blur-[230px]" />
       </div>
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="order-2 flex w-full flex-col justify-between border-t border-sky-500/25 bg-gradient-to-br from-sky-500/12 via-blue-500/8 to-indigo-500/20 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
+        <aside className="order-2 flex w-full flex-col justify-between border-t border-violet-500/35 bg-gradient-to-br from-violet-500/22 via-purple-500/18 to-indigo-500/24 px-6 py-10 text-white sm:px-10 lg:order-1 lg:w-1/2 lg:border-t-0 lg:border-r lg:px-12 lg:py-16">
           <div className="space-y-10">
             <div className="space-y-4">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">
+              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-violet-200">
                 AI Study Buddy
               </span>
               <h2 className="max-w-md text-3xl font-semibold leading-snug">
@@ -109,13 +109,13 @@ export default function SigninPage() {
               </h2>
             </div>
             <StudyBuddyIllustration className="w-full" />
-            <ul className="space-y-4 text-sm text-slate-200">
+            <ul className="space-y-4 text-sm text-violet-100/90">
               {SIDE_NOTES.map((note) => (
                 <li
                   key={note}
-                  className="flex items-center gap-3 rounded-xl border border-sky-400/35 bg-sky-500/12 px-4 py-3 text-sky-50"
+                  className="flex items-center gap-3 rounded-xl border border-violet-400/40 bg-violet-500/18 px-4 py-3 text-violet-50"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-400/45 text-sm font-semibold text-white">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/45 text-sm font-semibold text-white">
                     ★
                   </span>
                   <span>{note}</span>
@@ -123,17 +123,17 @@ export default function SigninPage() {
               ))}
             </ul>
           </div>
-          <div className="text-xs text-sky-100/80">
+          <div className="text-xs text-violet-100/80">
             公测阶段支持存储登录信息，随时可以清除。
           </div>
         </aside>
         <div className="order-1 w-full px-6 py-10 sm:px-10 lg:order-2 lg:w-1/2 lg:px-12 lg:py-16">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="mt-12 max-w-md">
-            <Card className="border-sky-400/40 bg-sky-500/15 text-white backdrop-blur-xl">
+            <Card className="border-violet-500/40 bg-gradient-to-br from-violet-500/24 via-purple-500/20 to-indigo-500/24 text-white backdrop-blur-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-3xl font-semibold">欢迎回来</CardTitle>
-                <CardDescription className="text-base text-sky-100/85">
+                <CardDescription className="text-base text-violet-100/85">
                   登录后立即铺开个性化学习路线与面试准备时间表。
                 </CardDescription>
               </CardHeader>
@@ -162,7 +162,7 @@ export default function SigninPage() {
                       <Label htmlFor="password">密码</Label>
                       <Link
                         href="#forgot-password"
-                        className="text-xs text-sky-300 underline-offset-2 hover:underline"
+                        className="text-xs text-violet-200 underline-offset-2 hover:underline"
                       >
                         忘记密码？
                       </Link>
@@ -183,7 +183,7 @@ export default function SigninPage() {
                       </p>
                     )}
                   </div>
-                  <label className="flex items-center gap-3 text-sm text-slate-200">
+                  <label className="flex items-center gap-3 text-sm text-violet-100/90">
                     <input
                       type="checkbox"
                       name="remember"
@@ -206,9 +206,9 @@ export default function SigninPage() {
                     {loading ? "正在同步学习旅程..." : "继续我的学习旅程"}
                   </Button>
                 </form>
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-violet-100/85">
                   没有账号？
-                  <Button asChild variant="ghost" size="sm" className="px-1 text-sky-300">
+                  <Button asChild variant="ghost" size="sm" className="px-1 text-violet-200">
                     <Link href="/signup">开启我的学习旅程</Link>
                   </Button>
                 </p>

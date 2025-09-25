@@ -45,7 +45,7 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.25),_rgba(15,23,42,0.96))]" />
         <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(59,130,246,0.18)_0%,rgba(56,189,248,0.08)_38%,transparent_76%)] opacity-70" />
-        <div className="absolute left-[-10%] top-1/4 h-[420px] w-[420px] rounded-full bg-sky-400/35 blur-[170px]" />
+        <div className="absolute left-[-10%] top-1/4 h-[420px] w-[420px] rounded-full bg-purple-500/35 blur-[170px]" />
         <div className="absolute right-[-8%] top-1/3 h-[360px] w-[360px] rounded-full bg-indigo-500/35 blur-[200px]" />
         <div className="absolute bottom-[-18%] left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-blue-500/25 blur-[240px]" />
       </div>
@@ -54,7 +54,7 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" className="text-slate-200 hover:text-white">
+            <Button asChild variant="ghost" className="text-violet-100/90 hover:text-white">
               <Link href="/signin">登录</Link>
             </Button>
             <Button asChild className="shadow-[0_12px_40px_rgba(59,130,246,0.32)]">
@@ -67,14 +67,14 @@ export default function HomePage() {
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-20 px-6 py-12 sm:px-10 sm:py-16">
         <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-8">
-            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-sky-200">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-violet-200">
               AI Study Buddy
             </span>
             <div className="space-y-4">
               <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
                 你的 AI 智能学习搭子
               </h1>
-              <p className="max-w-xl text-base text-slate-200 sm:text-lg">
+              <p className="max-w-xl text-base text-violet-100/90 sm:text-lg">
                 从规划到答疑，从进度追踪到就业进阶，一位始终在线的 AI 学伴，帮助你把每一次练习都对准目标。
               </p>
             </div>
@@ -82,11 +82,11 @@ export default function HomePage() {
               <Button asChild size="lg" className="px-7 text-base shadow-[0_18px_45px_rgba(79,70,229,0.35)]">
                 <Link href="/signup">免费开启我的学习旅程</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-sky-300/50 text-sky-100 hover:border-sky-400 hover:bg-sky-500/15 hover:text-white">
+              <Button asChild size="lg" variant="outline" className="border-violet-400/60 text-violet-100 hover:border-violet-300 hover:bg-violet-500/25 hover:text-white">
                 <Link href="/signin">我已有账号，立即登录</Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-6 text-sm text-slate-300">
+            <div className="flex flex-wrap gap-6 text-sm text-violet-100/85">
               <div>
                 <p className="text-3xl font-semibold text-white">92%</p>
                 <p>坚持打卡 4 周以上的学员完成主要阶段目标</p>
@@ -97,20 +97,20 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <Card className="border-sky-400/40 bg-sky-500/15 text-white shadow-[0_25px_80px_rgba(79,70,229,0.18)]">
+          <Card className="border-violet-500/35 bg-gradient-to-br from-violet-500/25 via-purple-500/22 to-indigo-500/25 text-white shadow-[0_25px_80px_rgba(79,70,229,0.18)]">
             <CardHeader className="space-y-3">
               <CardTitle className="text-2xl">每天都有伙伴在你身旁</CardTitle>
-              <CardDescription className="text-base text-sky-100/85">
+              <CardDescription className="text-base text-violet-100/85">
                 贴合节奏的学习搭子，看板式掌握进展，复盘提醒和情绪播报随时跟进。
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-sky-100/80">
-              <div className="rounded-lg border border-sky-400/30 bg-sky-500/10 p-4 text-sky-50">
+            <CardContent className="space-y-4 text-sm text-violet-100/80">
+              <div className="rounded-lg border border-violet-400/40 bg-violet-500/18 p-4 text-violet-50">
                 <p className="text-xs uppercase tracking-[0.3em] text-indigo-200">今日亮点</p>
                 <p className="mt-2 text-lg text-white">任务完成度 82%</p>
-                <p className="text-slate-300">下一个建议：完成面试行为题演练 1 轮。</p>
+                <p className="text-violet-100/85">下一个建议：完成面试行为题演练 1 轮。</p>
               </div>
-              <div className="rounded-lg border border-sky-400/30 bg-sky-500/10 p-4 text-sky-50">
+              <div className="rounded-lg border border-violet-400/40 bg-violet-500/18 p-4 text-violet-50">
                 <p className="text-xs uppercase tracking-[0.3em] text-indigo-200">情感播报</p>
                 <p className="mt-2 text-lg text-white">保持良好状态，再走一步就能完成本周计划。</p>
               </div>
@@ -121,7 +121,7 @@ export default function HomePage() {
         <section className="space-y-10">
           <div className="space-y-3">
             <h2 className="text-3xl font-semibold text-white">AI 学伴的 5 大能力</h2>
-            <p className="max-w-2xl text-base text-slate-300">
+            <p className="max-w-2xl text-base text-violet-100/85">
               将学习路径拆成可执行的行动，用数据与反馈伴随你坚持下去。
             </p>
           </div>
@@ -130,13 +130,13 @@ export default function HomePage() {
               <Card
                 key={feature.title}
                 className={cn(
-                  "border-sky-400/40 bg-sky-500/12 text-sky-50 transition-all duration-300",
-                  "hover:border-sky-300/70 hover:bg-sky-500/22 hover:text-white hover:shadow-[0_25px_60px_rgba(79,70,229,0.25)]",
+                  "border-violet-400/40 bg-violet-500/18 text-violet-50 transition-all duration-300",
+                  "hover:border-violet-500/80 hover:bg-violet-700/55 hover:text-white hover:shadow-[0_30px_70px_rgba(76,29,149,0.45)]",
                 )}
               >
                 <CardHeader className="space-y-2">
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-sky-100/80">
+                  <CardDescription className="text-violet-100/90">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -145,11 +145,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-sky-400/35 bg-sky-500/15 px-8 py-12 text-white shadow-[0_35px_90px_rgba(79,70,229,0.2)] sm:px-12">
+        <section className="overflow-hidden rounded-2xl border border-violet-500/40 bg-gradient-to-br from-violet-500/22 via-purple-500/20 to-indigo-500/24 px-8 py-12 text-white shadow-[0_35px_90px_rgba(79,70,229,0.2)] sm:px-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <h3 className="text-2xl font-semibold">今天开始，让 AI 陪你把目标逐一实现</h3>
-              <p className="max-w-xl text-sm text-slate-200">
+              <p className="max-w-xl text-sm text-violet-100/90">
                 选择适合你的阶段，15 秒完成注册，立即同步学习节奏与陪伴提醒。
               </p>
             </div>
@@ -157,7 +157,7 @@ export default function HomePage() {
               <Button asChild size="lg" className="px-6 shadow-[0_12px_35px_rgba(59,130,246,0.32)]">
                 <Link href="/signup">免费注册</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-sky-300/50 text-sky-100 hover:border-sky-400 hover:bg-sky-500/15 hover:text-white">
+              <Button asChild size="lg" variant="outline" className="border-violet-400/60 text-violet-100 hover:border-violet-300 hover:bg-violet-500/25 hover:text-white">
                 <Link href="/signin">我先体验登录</Link>
               </Button>
             </div>
