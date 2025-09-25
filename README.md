@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Study Buddy
+
+This project is built with [Next.js](https://nextjs.org) and now ships with a Drizzle ORM + Supabase setup for relational data access.
+
+## Database Setup
+
+- **Drizzle config**: `drizzle.config.ts` reads `DATABASE_URL` and emits migrations to `./drizzle`.
+- **Runtime client**: `src/lib/db/client.ts` creates a shared `pg` pool against Supabase and exports a Drizzle instance.
+- **Schema**: start from `src/lib/db/schema.ts` when you are ready to model tables with the `pgTable` helpers.
+
+### Required environment variables
+
+Add the following to `.env` (never commit production secrets):
+
+```
+DATABASE_URL=postgresql://postgres:password@db.supabase.co:5432/postgres
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+- `DATABASE_URL` powers Drizzle migrations and the pooled Postgres client.
+- Keep the service role key server-side only. The helper in `src/lib/supabase/server.ts` already guards against accidental client usage.
+
+### Supabase TypeScript definitions
+
+Generate strongly typed response objects and copy them into `src/lib/db/types.ts`:
+
+```
+supabase gen types typescript --project-id your-project-ref > src/lib/db/types.ts
+```
+
+That enables `@supabase/supabase-js` and Drizzle to share a single `Database` type.
+
+### Drizzle CLI commands
+
+```
+npm run db:generate   # generate SQL migration files from schema changes
+npm run db:push       # push the latest schema to Supabase
+npm run db:migrate    # execute pending migrations against the database
+```
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Visit [http://localhost:3000](http://localhost:3000) to see the app running. Start editing inside `src/app` and the page will hot reload.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Next.js Documentation](https://nextjs.org/docs) - core concepts and APIs
+- [Drizzle ORM Docs](https://orm.drizzle.team) - schema definitions, queries, and migrations
+- [Supabase Docs](https://supabase.com/docs) - project management and database guides
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploy this project with [Vercel](https://vercel.com/new) to take advantage of platform features such as Edge Functions and storage.

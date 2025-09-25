@@ -5,9 +5,14 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "db:push": "drizzle-kit push --config drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config drizzle.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
+    "drizzle-orm": "^0.44.5",
     "geist": "^1.5.1",
     "next": "15.5.4",
     "react": "19.1.0",
@@ -16,8 +21,12 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.15.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.2",
+    "drizzle-kit": "^0.31.4",
+    "pg": "^8.16.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
