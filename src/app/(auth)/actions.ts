@@ -26,34 +26,39 @@ function normalizeBaseUsername(name: string | null | undefined, email: string) {
   return base.length >= 3 ? base.slice(0, 24) : `${base}${Math.random().toString(36).slice(2, 5)}`;
 }
 
+type ProfileInsertPayload = Pick<
+  Database["public"]["Tables"]["profiles"]["Insert"],
+  "id" | "username" | "full_name" | "avatar_url"
+>;
+
 async function insertProfile(
   client: SupabaseDbClient,
-  userId: string,
-  username: string,
-  fullName?: string,
-  avatarUrl?: string,
+  profile: ProfileInsertPayload,
 ) {
+  const baseUsername = profile.username;
   let attempt = 0;
-  let currentUsername = username;
+  let currentUsername = baseUsername;
 
   while (attempt < USERNAME_SUFFIX_ATTEMPTS) {
+    const insertPayload: ProfileInsertPayload = {
+      id: profile.id,
+      username: currentUsername,
+      full_name: profile.full_name ?? null,
+      avatar_url: profile.avatar_url ?? null,
+    };
+
     const { data, error } = await client
       .from("profiles")
-      .insert({
-        id: userId,
-        username: currentUsername,
-        full_name: fullName ?? null,
-        avatar_url: avatarUrl ?? null,
-      })
+      .insert(insertPayload)
       .select("id, username, full_name, avatar_url")
       .single();
 
-    if (!error) {
+    if (!error && data) {
       return data;
     }
 
     if ((error as { code?: string }).code === "23505") {
-      currentUsername = `${username}${Math.random().toString(36).slice(2, 5)}`.slice(0, 24);
+      currentUsername = `${baseUsername}${Math.random().toString(36).slice(2, 5)}`.slice(0, 24);
       attempt += 1;
       continue;
     }
@@ -63,6 +68,7 @@ async function insertProfile(
 
   throw new Error("无法生成唯一的用户名，请稍后重试");
 }
+
 
 function extractField(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -135,13 +141,12 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
     const baseUsername = (providedUsername || normalizeBaseUsername(name, email)).toLowerCase();
 
     try {
-      await insertProfile(
-        supabaseAdmin,
-        user.id,
-        baseUsername,
-        name,
-        avatarUrl,
-      );
+      await insertProfile(supabaseAdmin, {
+        id: user.id,
+        username: baseUsername,
+        full_name: name,
+        avatar_url: avatarUrl ?? null,
+      });
     } catch (profileError: any) {
       if (profileError && typeof profileError === "object" && profileError.code === "23505") {
         return {

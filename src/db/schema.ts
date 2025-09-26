@@ -40,14 +40,17 @@ export const profiles = pgTable(
   "profiles",
   {
     id: uuid("id")
+      .default(sql`auth.uid()`)
       .primaryKey()
       .references(() => authUsers.id, { onDelete: "cascade" }),
-    username: text("username").notNull(),
+    username: varchar("username", { length: 24 }).notNull(),
     fullName: text("full_name"),
     avatarUrl: text("avatar_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
+    usernameLengthMin: check("profiles_username_length_min", sql`char_length(${table.username}) >= 3`),
     usernameUnique: uniqueIndex("profiles_username_unique").on(table.username),
     profilesSelectOwn: pgPolicy("profiles_select_own", {
       for: "select",
@@ -110,3 +113,4 @@ export type NewUser = typeof users.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
+
