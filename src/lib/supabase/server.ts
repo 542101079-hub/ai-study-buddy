@@ -1,7 +1,10 @@
 import "server-only";
+
+import { cookies } from "next/headers";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
 
-import type { Database } from "@/lib/db/types";
+import type { Database } from "@/db/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -24,3 +27,15 @@ export const supabaseAdmin = createClient<Database>(
     },
   },
 );
+
+export function createServerSupabaseClient() {
+  return createServerComponentClient<Database>({ cookies });
+}
+
+export async function getServerSession() {
+  const supabase = createServerSupabaseClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session ?? null;
+}

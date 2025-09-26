@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,66 +9,65 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuthRedirect } from "@/hooks/use-auth-redirect";
-import { clearSession, getSession } from "@/lib/session";
+import { createServerSupabaseClient, getServerSession } from "@/lib/supabase/server";
 
-interface SessionInfo {
-  email: string;
-  displayName?: string;
-}
+import { LogoutButton } from "./logout-button";
 
 const HIGHLIGHTS = [
   {
-    title: "本周学习进度",
+    title: "专注学习时长",
     value: "68%",
-    description: "与上周比提升 12%。",
+    description: "较上周提高了 12%",
   },
   {
-    title: "连续打卡天数",
+    title: "完成的计划",
     value: "5",
-    description: "保持机械包中加油，试着创造新的连续记录。",
+    description: "保持每周节奏，完成新增专题练习",
   },
   {
-    title: "今天予定时长",
+    title: "平均规划时长",
     value: "2.5h",
-    description: "再完成 1 个任务就可达成目标。",
+    description: "坚持每日 1 小时即可达成阶段目标",
   },
 ];
 
 const QUICK_ACTIONS = [
   {
     title: "今日任务",
-    description: "根据你的计划发掘今日需重点破集的知识点。",
+    description: "查看待办的高优先级知识点与练习题。",
     cta: "查看计划",
   },
   {
-    title: "下一个复盘",
-    description: "反思本周的最佳学习模式，准备启动新一轮的进阶计划。",
-    cta: "打开复盘",
+    title: "下一次回顾",
+    description: "整理最近的学习模块，为下一阶段复习做准备。",
+    cta: "打开复习",
   },
   {
-    title: "练习目标",
-    description: "前置下周重点任务，确认需深耐的技能和知识模块。",
-    cta: "编辑路线",
+    title: "强化目标",
+    description: "聚焦关键技能，确认练习安排与知识节点。",
+    cta: "编辑路径",
   },
 ];
 
-export default function DashboardPage() {
-  useAuthRedirect({ when: "unauthenticated", redirectTo: "/" });
+export default async function DashboardPage() {
+  const session = await getServerSession();
 
-  const router = useRouter();
-  const [session, setSessionState] = useState<SessionInfo | null>(null);
-
-  useEffect(() => {
-    setSessionState(getSession());
-  }, []);
-
-  function handleSignOut() {
-    clearSession();
-    router.replace("/");
+  if (!session) {
+    redirect("/");
   }
 
-  const displayName = session?.displayName || session?.email?.split("@")[0] || "Learner";
+  const supabase = createServerSupabaseClient();
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("full_name, username, avatar_url")
+    .eq("id", session.user.id)
+    .maybeSingle<{ full_name: string | null; username: string | null; avatar_url: string | null }>();
+
+  const displayName =
+    profileData?.full_name ||
+    profileData?.username ||
+    session.user.email?.split("@")[0] ||
+    "Learner";
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -81,22 +78,23 @@ export default function DashboardPage() {
       </div>
       <div className="container mx-auto flex min-h-screen flex-col gap-14 px-6 pb-20 pt-12 sm:px-10">
         <header className="flex flex-wrap items-center justify-between gap-6">
-          <BrandLogo subtitle="AI智能学习搭子" />
+          <BrandLogo subtitle="AI 智能学习顾问" />
           <div className="flex items-center gap-4">
             <div className="text-right text-sm text-white/92">
-              <p>欢迎回来，{displayName}！</p>
-              <p className="text-xs text-white/85">今天也一起保持动力。</p>
+              <p>欢迎回来，{displayName}</p>
+              <p className="text-xs text-white/85">继续保持学习势能</p>
             </div>
-            <Button variant="outline" className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" onClick={handleSignOut}>
-              退出
-            </Button>
+            <LogoutButton className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" />
           </div>
         </header>
 
         <main className="flex flex-1 flex-col gap-12 pb-12">
           <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {HIGHLIGHTS.map((item) => (
-              <Card key={item.title} className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
+              <Card
+                key={item.title}
+                className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl"
+              >
                 <CardHeader className="space-y-2">
                   <CardTitle className="text-sm font-medium text-white/92">
                     {item.title}
@@ -116,11 +114,9 @@ export default function DashboardPage() {
             <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <CardTitle className="text-2xl font-semibold">
-                    路径静猜调整
-                  </CardTitle>
+                  <CardTitle className="text-2xl font-semibold">本周概览</CardTitle>
                   <CardDescription className="text-sm text-white/90">
-                    根据最新进度与优先级，提前安排的策略建议已到达。
+                    查看最新的进度摘要与推荐任务，高效规划学习时间。
                   </CardDescription>
                 </div>
                 <Button size="sm" className="bg-violet-900/70 hover:bg-violet-700">
@@ -133,12 +129,8 @@ export default function DashboardPage() {
                     key={action.title}
                     className="rounded-2xl border border-violet-700/60 bg-violet-800/55 p-4 text-white/90"
                   >
-                    <h3 className="text-base font-semibold text-white">
-                      {action.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-white/90">
-                      {action.description}
-                    </p>
+                    <h3 className="text-base font-semibold text-white">{action.title}</h3>
+                    <p className="mt-2 text-sm text-white/90">{action.description}</p>
                     <Button variant="ghost" size="sm" className="mt-4 px-1 text-white/85">
                       {action.cta}
                     </Button>
@@ -149,23 +141,22 @@ export default function DashboardPage() {
 
             <Card className="flex flex-col justify-between border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-2xl font-semibold">
-                  动力体系
-                </CardTitle>
+                <CardTitle className="text-2xl font-semibold">学习协同</CardTitle>
                 <CardDescription className="text-sm text-white/92">
-                  您的反馈帮助 AI 搭子调整动力方向，维持长期学习效率。
+                  结合 AI 建议与自定义计划，构建多维的进阶路径。
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-white/90">
                 <p>
-                  本周情绪倾向：
-                  <span className="underline">优势活力</span>
+                  下一步关注：<span className="underline">强化记忆和知识串联</span>
                 </p>
-                <p>
-                  提醒建议：按时继续保持 25 分钟学习 + 5 分钟复盘的节奏。
-                </p>
-                <Button variant="outline" className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" size="sm">
-                  设定提醒
+                <p>建议安排：每日 25 分钟深度学习 + 5 分钟快速复盘。</p>
+                <Button
+                  variant="outline"
+                  className="border-violet-700/60 text-white/85 hover:bg-violet-900/70"
+                  size="sm"
+                >
+                  设置提醒
                 </Button>
               </CardContent>
             </Card>

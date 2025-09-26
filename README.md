@@ -5,8 +5,8 @@ This project is built with [Next.js](https://nextjs.org) and now ships with a Dr
 ## Database Setup
 
 - **Drizzle config**: `drizzle.config.ts` reads `DATABASE_URL` and emits migrations to `./drizzle`.
-- **Runtime client**: `src/lib/db/client.ts` creates a shared `pg` pool against Supabase and exports a Drizzle instance.
-- **Schema**: start from `src/lib/db/schema.ts` when you are ready to model tables with the `pgTable` helpers.
+- **Runtime client**: `src/lib/db.ts` creates a shared `pg` pool against Supabase and exports a Drizzle instance.
+- **Schema**: start from `src/db/schema.ts` when you are ready to model tables with the `pgTable` helpers.
 
 ### Required environment variables
 
@@ -24,10 +24,10 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 ### Supabase TypeScript definitions
 
-Generate strongly typed response objects and copy them into `src/lib/db/types.ts`:
+Generate strongly typed response objects and copy them into `src/db/types.ts`:
 
 ```
-supabase gen types typescript --project-id your-project-ref > src/lib/db/types.ts
+supabase gen types typescript --project-id your-project-ref > src/db/types.ts
 ```
 
 That enables `@supabase/supabase-js` and Drizzle to share a single `Database` type.
@@ -57,3 +57,10 @@ Visit [http://localhost:3000](http://localhost:3000) to see the app running. Sta
 ## Deploy on Vercel
 
 Deploy this project with [Vercel](https://vercel.com/new) to take advantage of platform features such as Edge Functions and storage.
+
+### Profiles table rollout
+
+Run `npm run db:push` (or `npm run db:migrate`) to provision the `profiles` table in Supabase. This table mirrors the default Supabase schema expectation: every row shares its primary key with `auth.users.id` and stores a unique `username`, optional `full_name` and `avatar_url`, plus a `created_at` timestamp. Row Level Security is enabled and the migration creates SELECT/INSERT/UPDATE/DELETE policies so each authenticated user can only access their own profile (checks `auth.uid() = profiles.id`).
+
+If you need the raw SQL, see `drizzle/0000_yummy_talon.sql`.
+

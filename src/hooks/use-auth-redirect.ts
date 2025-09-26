@@ -2,7 +2,26 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { hasActiveSession } from "@/lib/session";
+
+async function fetchSessionStatus(): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/session", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = (await response.json()) as { user: unknown };
+    return Boolean(data.user);
+  } catch (error) {
+    console.warn("Failed to resolve auth session", error);
+    return false;
+  }
+}
 
 type RedirectCondition = "authenticated" | "unauthenticated";
 
@@ -24,13 +43,23 @@ export function useAuthRedirect({
       return;
     }
 
-    const loggedIn = hasActiveSession();
-    const shouldRedirect =
-      (when === "authenticated" && loggedIn) ||
-      (when === "unauthenticated" && !loggedIn);
+    let cancelled = false;
 
-    if (shouldRedirect) {
-      router.replace(redirectTo);
+    async function evaluateRedirect() {
+      const loggedIn = await fetchSessionStatus();
+      const shouldRedirect =
+        (when === "authenticated" && loggedIn) ||
+        (when === "unauthenticated" && !loggedIn);
+
+      if (!cancelled && shouldRedirect) {
+        router.replace(redirectTo);
+      }
     }
+
+    evaluateRedirect();
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled, redirectTo, router, when]);
 }

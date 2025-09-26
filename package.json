@@ -12,11 +12,16 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.44.5",
     "geist": "^1.5.1",
     "next": "15.5.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^3.23.8",
+    "antd": "^5.19.0",
+    "@ant-design/icons": "^5.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -28,6 +33,7 @@
     "drizzle-kit": "^0.31.4",
     "pg": "^8.16.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/bcryptjs": "^2.4.6"
   }
 }
