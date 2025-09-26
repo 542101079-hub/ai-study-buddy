@@ -36,7 +36,6 @@ export function SignUpForm() {
     const email = (formData.get("email") as string | null)?.trim() ?? "";
     const password = (formData.get("password") as string | null) ?? "";
     const username = (formData.get("username") as string | null)?.trim() ?? "";
-    const avatarUrl = (formData.get("avatarUrl") as string | null)?.trim() ?? "";
 
     setIsSubmitting(true);
     setFieldErrors({});
@@ -48,7 +47,6 @@ export function SignUpForm() {
         email,
         password,
         username: username.length > 0 ? username : undefined,
-        avatarUrl: avatarUrl.length > 0 ? avatarUrl : undefined,
       });
 
       if (result.ok) {
@@ -141,22 +139,6 @@ export function SignUpForm() {
         />
         {fieldErrors.password && (
           <p className="text-sm text-rose-300/95">{fieldErrors.password}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="avatarUrl" className="text-sm text-slate-200">
-          头像地址（可选）
-        </Label>
-        <Input
-          id="avatarUrl"
-          name="avatarUrl"
-          type="url"
-          placeholder="https://example.com/avatar.png"
-          disabled={isSubmitting}
-        />
-        {fieldErrors.avatarUrl && (
-          <p className="text-sm text-rose-300/95">{fieldErrors.avatarUrl}</p>
         )}
       </div>
 
