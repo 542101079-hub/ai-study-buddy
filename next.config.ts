@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Allow Turbopack to load the CommonJS bcryptjs package on the server.
+    serverComponentsExternalPackages: ["bcryptjs"],
+  },
 };
 
 export default nextConfig;
