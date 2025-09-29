@@ -4,6 +4,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 import { formatValidationErrors, loginSchema } from "@/lib/auth/validation";
 import { loadTenantScopedProfile, loadTenantSummary } from "@/lib/auth/tenant-context";
+import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Database } from "@/db/types";
 
 export async function POST(request: Request) {
@@ -51,7 +52,16 @@ export async function POST(request: Request) {
 
   const { user } = data;
 
-  const profile = await loadTenantScopedProfile(supabase, user.id);
+  let profile;
+  try {
+    profile = await loadTenantScopedProfile(supabaseAdmin, user.id);
+  } catch (profileError) {
+    console.error("[auth/login] load profile failed", profileError);
+    return NextResponse.json(
+      { message: "登录失败，请稍后再试" },
+      { status: 500 },
+    );
+  }
 
   if (!profile) {
     return NextResponse.json(
@@ -60,7 +70,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const tenant = await loadTenantSummary(supabase, profile.tenant_id);
+  let tenant;
+  try {
+    tenant = await loadTenantSummary(supabaseAdmin, profile.tenant_id);
+  } catch (tenantError) {
+    console.error("[auth/login] load tenant failed", tenantError);
+    return NextResponse.json(
+      { message: "登录失败，请稍后再试" },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json(
     {
