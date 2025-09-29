@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
+import { loadTenantScopedProfile, loadTenantSummary } from "@/lib/auth/tenant-context";
 import type { Database } from "@/db/types";
 
 export async function GET() {
@@ -15,17 +16,23 @@ export async function GET() {
     return NextResponse.json({ user: null, session: null });
   }
 
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("username, full_name, avatar_url")
-    .eq("id", session.user.id)
-    .maybeSingle();
+  const profile = await loadTenantScopedProfile(supabase, session.user.id);
+
+  if (!profile) {
+    return NextResponse.json(
+      { message: "Profile not found" },
+      { status: 404 },
+    );
+  }
+
+  const tenant = await loadTenantSummary(supabase, profile.tenant_id);
 
   return NextResponse.json({
     user: {
       id: session.user.id,
       email: session.user.email,
-      profile: profileData ?? null,
+      profile,
+      tenant,
     },
     session: {
       expiresAt: session.expires_at

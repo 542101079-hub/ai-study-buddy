@@ -22,6 +22,20 @@
       "when": 1758868616520,
       "tag": "0002_lively_roughhouse",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1759149188983,
+      "tag": "0003_sturdy_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1759150042565,
+      "tag": "0004_rich_roxanne_simpson",
+      "breakpoints": true
     }
   ]
 }

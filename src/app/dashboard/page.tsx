@@ -1,3 +1,5 @@
+
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { BrandLogo } from "@/components/logo";
@@ -15,37 +17,37 @@ import { LogoutButton } from "./logout-button";
 
 const HIGHLIGHTS = [
   {
-    title: "专注学习时长",
-    value: "68%",
-    description: "较上周提高了 12%",
+    title: "Focus time",
+    value: "6.8h",
+    description: "Up 12% compared to last week",
   },
   {
-    title: "完成的计划",
+    title: "Plans completed",
     value: "5",
-    description: "保持每周节奏，完成新增专题练习",
+    description: "You are ahead of the weekly target",
   },
   {
-    title: "平均规划时长",
+    title: "Average session",
     value: "2.5h",
-    description: "坚持每日 1 小时即可达成阶段目标",
+    description: "Daily streak maintained for 9 days",
   },
 ];
 
 const QUICK_ACTIONS = [
   {
-    title: "今日任务",
-    description: "查看待办的高优先级知识点与练习题。",
-    cta: "查看计划",
+    title: "Review study plan",
+    description: "Check upcoming focus areas and adjust your schedule.",
+    cta: "View plan",
   },
   {
-    title: "下一次回顾",
-    description: "整理最近的学习模块，为下一阶段复习做准备。",
-    cta: "打开复习",
+    title: "Start next session",
+    description: "Jump into the next AI-guided practice block.",
+    cta: "Begin session",
   },
   {
-    title: "强化目标",
-    description: "聚焦关键技能，确认练习安排与知识节点。",
-    cta: "编辑路径",
+    title: "Capture insights",
+    description: "Record key takeaways to reinforce long-term memory.",
+    cta: "Add note",
   },
 ];
 
@@ -59,15 +61,24 @@ export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("full_name, username, avatar_url")
+    .select("full_name, username, avatar_url, role, tenant_id")
     .eq("id", session.user.id)
-    .maybeSingle<{ full_name: string | null; username: string | null; avatar_url: string | null }>();
+    .maybeSingle<{
+      full_name: string | null;
+      username: string | null;
+      avatar_url: string | null;
+      role: "user" | "admin";
+      tenant_id: string | null;
+    }>();
 
   const displayName =
     profileData?.full_name ||
     profileData?.username ||
     session.user.email?.split("@")[0] ||
     "Learner";
+
+  const isAdmin = profileData?.role === "admin";
+  const roleLabel = isAdmin ? "Administrator" : "Member";
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -78,11 +89,21 @@ export default async function DashboardPage() {
       </div>
       <div className="container mx-auto flex min-h-screen flex-col gap-14 px-6 pb-20 pt-12 sm:px-10">
         <header className="flex flex-wrap items-center justify-between gap-6">
-          <BrandLogo subtitle="AI 智能学习顾问" />
-          <div className="flex items-center gap-4">
+          <BrandLogo subtitle="AI Study Companion" />
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {isAdmin && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="border-emerald-500/60 text-emerald-200 hover:bg-emerald-500/20"
+              >
+                <Link href="/admin">Manage workspace</Link>
+              </Button>
+            )}
             <div className="text-right text-sm text-white/92">
-              <p>欢迎回来，{displayName}</p>
-              <p className="text-xs text-white/85">继续保持学习势能</p>
+              <p>Welcome back, {displayName}</p>
+              <p className="text-xs text-white/75">{roleLabel}</p>
             </div>
             <LogoutButton className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" />
           </div>
@@ -114,13 +135,13 @@ export default async function DashboardPage() {
             <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <CardTitle className="text-2xl font-semibold">本周概览</CardTitle>
+                  <CardTitle className="text-2xl font-semibold">Today&apos;s focus</CardTitle>
                   <CardDescription className="text-sm text-white/90">
-                    查看最新的进度摘要与推荐任务，高效规划学习时间。
+                    Stay aligned with your goal for the week and balance study blocks with rest.
                   </CardDescription>
                 </div>
                 <Button size="sm" className="bg-violet-900/70 hover:bg-violet-700">
-                  更新计划
+                  Adjust plan
                 </Button>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
@@ -130,7 +151,7 @@ export default async function DashboardPage() {
                     className="rounded-2xl border border-violet-700/60 bg-violet-800/55 p-4 text-white/90"
                   >
                     <h3 className="text-base font-semibold text-white">{action.title}</h3>
-                    <p className="mt-2 text-sm text-white/90">{action.description}</p>
+                    <p className="mt-2 text-sm text-white/85">{action.description}</p>
                     <Button variant="ghost" size="sm" className="mt-4 px-1 text-white/85">
                       {action.cta}
                     </Button>
@@ -141,28 +162,57 @@ export default async function DashboardPage() {
 
             <Card className="flex flex-col justify-between border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-2xl font-semibold">学习协同</CardTitle>
+                <CardTitle className="text-2xl font-semibold">Daily ritual</CardTitle>
                 <CardDescription className="text-sm text-white/92">
-                  结合 AI 建议与自定义计划，构建多维的进阶路径。
+                  Pair deep work sprints with quick reviews to reinforce retention.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-white/90">
                 <p>
-                  下一步关注：<span className="underline">强化记忆和知识串联</span>
+                  Start with a <span className="underline">10 minute recap</span> of yesterday&apos;s notes.
                 </p>
-                <p>建议安排：每日 25 分钟深度学习 + 5 分钟快速复盘。</p>
+                <p>Schedule blocks of 25 minutes study + 5 minutes reflection to stay fresh.</p>
                 <Button
                   variant="outline"
                   className="border-violet-700/60 text-white/85 hover:bg-violet-900/70"
                   size="sm"
                 >
-                  设置提醒
+                  View checklist
                 </Button>
               </CardContent>
             </Card>
           </section>
+
+          {isAdmin && (
+            <Card className="border-emerald-600/50 bg-gradient-to-br from-emerald-900/70 via-emerald-800/60 to-slate-900/80 text-white backdrop-blur-xl">
+              <CardHeader className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <CardTitle className="text-2xl font-semibold">Workspace insights</CardTitle>
+                  <CardDescription className="text-sm text-white/85">
+                    Review team progress and update member permissions when necessary.
+                  </CardDescription>
+                </div>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="border-emerald-500/60 text-emerald-200 hover:bg-emerald-500/20"
+                >
+                  <Link href="/admin">Open admin console</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-white/85">
+                <p>
+                  Members inherit access based on their role. Promote trusted collaborators to
+                  administrators to help manage the workspace.
+                </p>
+                <p>Only administrators can see this section.</p>
+              </CardContent>
+            </Card>
+          )}
         </main>
       </div>
     </div>
   );
 }
+

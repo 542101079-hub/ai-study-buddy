@@ -1,3 +1,4 @@
+
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -19,10 +20,41 @@ export const authUsers = auth.table("users", {
   id: uuid("id").notNull(),
 });
 
+export const tenants = pgTable(
+  "tenants",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 120 }).notNull(),
+    slug: varchar("slug", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantMember = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS member_profiles
+      WHERE member_profiles.tenant_id = ${table.id}
+        AND member_profiles.id = auth.uid()
+    )` as const;
+
+    return {
+      slugUnique: uniqueIndex("tenants_slug_unique").on(table.slug),
+      tenantsSelectOwn: pgPolicy("tenants_select_own", {
+        for: "select",
+        to: "authenticated",
+        using: tenantMember,
+      }),
+    };
+  },
+).enableRLS();
+
 export const users = pgTable(
   "app_users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
     email: varchar("email", { length: 320 }).notNull(),
     displayName: varchar("display_name", { length: 120 }),
     hashedPassword: varchar("hashed_password", { length: 255 }).notNull(),
@@ -33,6 +65,7 @@ export const users = pgTable(
   },
   (table) => ({
     emailUnique: uniqueIndex("app_users_email_unique").on(table.email),
+    tenantIdIdx: index("app_users_tenant_id_idx").on(table.tenantId),
   }),
 );
 
@@ -43,43 +76,67 @@ export const profiles = pgTable(
       .default(sql`auth.uid()`)
       .primaryKey()
       .references(() => authUsers.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
     username: varchar("username", { length: 24 }).notNull(),
     fullName: text("full_name"),
     avatarUrl: text("avatar_url"),
+    role: varchar("role", { length: 16 })
+      .notNull()
+      .default("user")
+      .$type<"user" | "admin">(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => ({
-    usernameLengthMin: check("profiles_username_length_min", sql`char_length(${table.username}) >= 3`),
-    usernameUnique: uniqueIndex("profiles_username_unique").on(table.username),
-    profilesSelectOwn: pgPolicy("profiles_select_own", {
-      for: "select",
-      to: "authenticated",
-      using: sql`auth.uid() = ${table.id}`,
-    }),
-    profilesInsertOwn: pgPolicy("profiles_insert_own", {
-      for: "insert",
-      to: "authenticated",
-      withCheck: sql`auth.uid() = ${table.id}`,
-    }),
-    profilesUpdateOwn: pgPolicy("profiles_update_own", {
-      for: "update",
-      to: "authenticated",
-      using: sql`auth.uid() = ${table.id}`,
-      withCheck: sql`auth.uid() = ${table.id}`,
-    }),
-    profilesDeleteOwn: pgPolicy("profiles_delete_own", {
-      for: "delete",
-      to: "authenticated",
-      using: sql`auth.uid() = ${table.id}`,
-    }),
-  }),
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOrTenantAdmin = sql`auth.uid() = ${table.id} OR ${tenantAdmin}` as const;
+
+    return {
+      usernameLengthMin: check("profiles_username_length_min", sql`char_length(${table.username}) >= 3`),
+      usernameUnique: uniqueIndex("profiles_username_unique").on(table.tenantId, table.username),
+      tenantIdIdx: index("profiles_tenant_id_idx").on(table.tenantId),
+      roleAllowed: check("profiles_role_allowed", sql`${table.role} in ('user', 'admin')`),
+      profilesSelectOwn: pgPolicy("profiles_select_own", {
+        for: "select",
+        to: "authenticated",
+        using: selfOrTenantAdmin,
+      }),
+      profilesInsertOwn: pgPolicy("profiles_insert_own", {
+        for: "insert",
+        to: "authenticated",
+        withCheck: selfOrTenantAdmin,
+      }),
+      profilesUpdateOwn: pgPolicy("profiles_update_own", {
+        for: "update",
+        to: "authenticated",
+        using: selfOrTenantAdmin,
+        withCheck: selfOrTenantAdmin,
+      }),
+      profilesDeleteOwn: pgPolicy("profiles_delete_own", {
+        for: "delete",
+        to: "authenticated",
+        using: selfOrTenantAdmin,
+      }),
+    };
+  },
 ).enableRLS();
 
 export const sessions = pgTable(
   "app_sessions",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -92,25 +149,41 @@ export const sessions = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (table) => ({
+    tenantIdIdx: index("app_sessions_tenant_id_idx").on(table.tenantId),
     userIdIdx: index("app_sessions_user_id_idx").on(table.userId),
     tokenHashUnique: uniqueIndex("app_sessions_token_hash_unique").on(table.tokenHash),
   }),
 );
 
-export const userRelations = relations(users, ({ many }) => ({
+export const tenantRelations = relations(tenants, ({ many }) => ({
+  profiles: many(profiles),
+  users: many(users),
+  sessions: many(sessions),
+}));
+
+export const userRelations = relations(users, ({ many, one }) => ({
+  tenant: one(tenants, {
+    fields: [users.tenantId],
+    references: [tenants.id],
+  }),
   sessions: many(sessions),
 }));
 
 export const sessionRelations = relations(sessions, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [sessions.tenantId],
+    references: [tenants.id],
+  }),
   user: one(users, {
     fields: [sessions.userId],
     references: [users.id],
   }),
 }));
 
+export type Tenant = typeof tenants.$inferSelect;
+export type NewTenant = typeof tenants.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
-

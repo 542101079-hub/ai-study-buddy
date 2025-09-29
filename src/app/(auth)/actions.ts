@@ -6,7 +6,8 @@ import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatValidationErrors, loginSchema, registerSchema } from "@/lib/auth/validation";
-import { supabaseAdmin, createServerSupabaseClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/server";
+import { createTenant, deriveTenantMetadata } from "@/lib/tenants";
 import type { Database } from "@/db/types";
 
 type SupabaseDbClient = SupabaseClient<Database>;
@@ -28,7 +29,7 @@ function normalizeBaseUsername(name: string | null | undefined, email: string) {
 
 type ProfileInsertPayload = Pick<
   Database["public"]["Tables"]["profiles"]["Insert"],
-  "id" | "username" | "full_name" | "avatar_url"
+  "id" | "tenant_id" | "username" | "full_name" | "avatar_url" | "role"
 >;
 
 async function insertProfile(
@@ -42,15 +43,17 @@ async function insertProfile(
   while (attempt < USERNAME_SUFFIX_ATTEMPTS) {
     const insertPayload: ProfileInsertPayload = {
       id: profile.id,
+      tenant_id: profile.tenant_id,
       username: currentUsername,
       full_name: profile.full_name ?? null,
       avatar_url: profile.avatar_url ?? null,
+      role: profile.role ?? 'user',
     };
 
     const { data, error } = await client
       .from("profiles")
       .insert(insertPayload)
-      .select("id, username, full_name, avatar_url")
+      .select("id, tenant_id, username, full_name, avatar_url, role")
       .single();
 
     if (!error && data) {
@@ -140,12 +143,23 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
 
     const baseUsername = (providedUsername || normalizeBaseUsername(name, email)).toLowerCase();
 
+    const tenantMeta = deriveTenantMetadata(name, baseUsername, email);
+    let tenant;
+    try {
+      tenant = await createTenant(supabaseAdmin, tenantMeta.name, tenantMeta.slugBase);
+    } catch (tenantError: any) {
+      console.error("[actions/signUp] createTenant failed", tenantError);
+      return { success: false, message: "创建工作区失败，请稍后再试" };
+    }
+
     try {
       await insertProfile(supabaseAdmin, {
         id: user.id,
+        tenant_id: tenant.id,
         username: baseUsername,
         full_name: name,
         avatar_url: avatarUrl ?? null,
+        role: 'admin',
       });
     } catch (profileError: any) {
       if (profileError && typeof profileError === "object" && profileError.code === "23505") {

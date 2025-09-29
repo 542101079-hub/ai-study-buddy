@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatValidationErrors, registerSchema } from "@/lib/auth/validation";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { createTenant, deriveTenantMetadata } from "@/lib/tenants";
 import type { Database } from "@/db/types";
 
 function normalizeBaseUsername(name: string | null | undefined, email: string) {
@@ -23,9 +24,11 @@ function normalizeBaseUsername(name: string | null | undefined, email: string) {
 async function insertProfile(
   supabase: SupabaseClient<Database>,
   userId: string,
+  tenantId: string,
   username: string,
   fullName?: string,
   avatarUrl?: string,
+  role: 'user' | 'admin' = 'user',
 ) {
   let attempt = 0;
   let currentUsername = username;
@@ -34,11 +37,13 @@ async function insertProfile(
       .from("profiles")
       .insert({
         id: userId,
+        tenant_id: tenantId,
         username: currentUsername,
         full_name: fullName ?? null,
         avatar_url: avatarUrl ?? null,
+        role,
       })
-      .select("id, username, full_name, avatar_url")
+      .select("id, tenant_id, username, full_name, avatar_url, role")
       .single();
 
     if (!error) {
@@ -135,14 +140,28 @@ export async function POST(request: Request) {
 
     const baseUsername = (providedUsername || normalizeBaseUsername(name, email)).toLowerCase();
 
+    const tenantMeta = deriveTenantMetadata(name, baseUsername, email);
+    let tenant;
+    try {
+      tenant = await createTenant(supabaseAdmin, tenantMeta.name, tenantMeta.slugBase);
+    } catch (tenantError: any) {
+      console.error("[auth/register] createTenant failed", tenantError);
+      return NextResponse.json(
+        { message: "创建工作区失败，请稍后再试" },
+        { status: 500 },
+      );
+    }
+
     let profile;
     try {
       profile = await insertProfile(
-        supabase as unknown as SupabaseClient<Database>,
+        supabaseAdmin,
         user.id,
+        tenant.id,
         baseUsername,
         name,
         avatarUrl,
+        'admin',
       );
     } catch (profileError: any) {
       if (profileError && typeof profileError === "object" && profileError.code === "23505") {
@@ -169,6 +188,7 @@ export async function POST(request: Request) {
           id: user.id,
           email: user.email,
           profile,
+          tenant,
         },
       },
       { status: 201 },

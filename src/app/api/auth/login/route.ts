@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 import { formatValidationErrors, loginSchema } from "@/lib/auth/validation";
+import { loadTenantScopedProfile, loadTenantSummary } from "@/lib/auth/tenant-context";
 import type { Database } from "@/db/types";
 
 export async function POST(request: Request) {
@@ -50,11 +51,16 @@ export async function POST(request: Request) {
 
   const { user } = data;
 
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("username, full_name, avatar_url")
-    .eq("id", user.id)
-    .maybeSingle();
+  const profile = await loadTenantScopedProfile(supabase, user.id);
+
+  if (!profile) {
+    return NextResponse.json(
+      { message: "Profile not found" },
+      { status: 404 },
+    );
+  }
+
+  const tenant = await loadTenantSummary(supabase, profile.tenant_id);
 
   return NextResponse.json(
     {
@@ -62,7 +68,8 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         email: user.email,
-        profile: profileData ?? null,
+        profile,
+        tenant,
       },
     },
     { status: 200 },
