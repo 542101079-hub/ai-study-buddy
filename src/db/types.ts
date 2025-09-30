@@ -1,8 +1,7 @@
-
 export type Database = {
   public: {
     Tables: {
-      app_users: {
+      users: {
         Row: {
           id: string;
           tenant_id: string;
@@ -32,7 +31,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "app_users_tenant_id_tenants_id_fk";
+            foreignKeyName: "users_tenant_id_tenants_id_fk";
             columns: ["tenant_id"];
             referencedRelation: "tenants";
             referencedColumns: ["id"];
@@ -44,6 +43,8 @@ export type Database = {
           id: string;
           name: string;
           slug: string;
+          logo_url: string | null;
+          tagline: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -51,6 +52,8 @@ export type Database = {
           id?: string;
           name: string;
           slug: string;
+          logo_url?: string | null;
+          tagline?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -58,6 +61,8 @@ export type Database = {
           id?: string;
           name?: string;
           slug?: string;
+          logo_url?: string | null;
+          tagline?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -156,7 +161,7 @@ export type Database = {
           {
             foreignKeyName: "app_sessions_user_id_fkey";
             columns: ["user_id"];
-            referencedRelation: "app_users";
+            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];

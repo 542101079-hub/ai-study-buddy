@@ -1,4 +1,3 @@
-
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/db/types";
@@ -19,11 +18,29 @@ function generateRandomSuffix(size = 4) {
   return Math.random().toString(36).slice(2, 2 + size);
 }
 
+type TenantMetadataOverrides = {
+  tenantName?: string;
+  tenantSlug?: string;
+};
+
 export function deriveTenantMetadata(
   fullName: string | null | undefined,
   username: string,
   email: string,
+  overrides: TenantMetadataOverrides = {},
 ) {
+  if (overrides.tenantName) {
+    const trimmedTenantName = overrides.tenantName.trim().slice(0, 120) || "Workspace";
+    const slugSeed = overrides.tenantSlug?.trim() || trimmedTenantName;
+    const fallbackSeed = email.split("@")[0] ?? username ?? fullName ?? "tenant";
+    const slugBase = normalizeSlugCandidate(slugSeed) || normalizeSlugCandidate(fallbackSeed) || "tenant";
+
+    return {
+      name: trimmedTenantName,
+      slugBase,
+    };
+  }
+
   const trimmedFullName = fullName?.trim();
   const emailLocalPart = email.split("@")[0] ?? "workspace";
   const baseIdentifier = trimmedFullName || username || emailLocalPart || "workspace";
@@ -36,10 +53,16 @@ export function deriveTenantMetadata(
   return { name, slugBase };
 }
 
+type CreateTenantOptions = {
+  logoUrl?: string | null;
+  tagline?: string | null;
+};
+
 export async function createTenant(
   supabase: SupabaseClient<Database>,
   name: string,
   slugBase: string,
+  options: CreateTenantOptions = {},
 ) {
   let attempt = 0;
   const base = slugBase || "tenant";
@@ -53,8 +76,10 @@ export async function createTenant(
       .insert({
         name,
         slug: slugCandidate,
+        logo_url: options.logoUrl ?? null,
+        tagline: options.tagline ?? null,
       })
-      .select("id, name, slug")
+      .select("id, name, slug, logo_url, tagline")
       .single();
 
     if (!error && data) {

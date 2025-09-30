@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -15,13 +15,47 @@ interface MessageState {
   variant: "success" | "error";
 }
 
+interface TenantOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export function SignUpForm() {
   const router = useRouter();
   useAuthRedirect({ when: "authenticated", redirectTo: "/dashboard" });
 
+  const [tenants, setTenants] = useState<TenantOption[]>([]);
+  const [tenantLoading, setTenantLoading] = useState(true);
+  const [tenantError, setTenantError] = useState<string | null>(null);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
   const [message, setMessage] = useState<MessageState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadTenants() {
+      try {
+        const response = await fetch("/api/tenants");
+        if (!response.ok) {
+          throw new Error("failed");
+        }
+        const payload = (await response.json()) as { tenants?: Array<{ id: string; name: string; slug: string }> };
+        const list = payload.tenants ?? [];
+        setTenants(list);
+        setSelectedTenantId(list[0]?.id ?? "");
+        setTenantError(list.length === 0 ? "暂无可用的工作区，请联系管理员" : null);
+      } catch (error) {
+        console.error("[signup] load tenants failed", error);
+        setTenantError("无法加载工作区列表，请稍后再试");
+      } finally {
+        setTenantLoading(false);
+      }
+    }
+
+    loadTenants();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,6 +70,7 @@ export function SignUpForm() {
     const email = (formData.get("email") as string | null)?.trim() ?? "";
     const password = (formData.get("password") as string | null) ?? "";
     const username = (formData.get("username") as string | null)?.trim() ?? "";
+    const tenantId = ((formData.get("tenantId") as string | null)?.trim() ?? selectedTenantId ?? "");
 
     setIsSubmitting(true);
     setFieldErrors({});
@@ -46,6 +81,7 @@ export function SignUpForm() {
         name,
         email,
         password,
+        tenantId,
         username: username.length > 0 ? username : undefined,
       });
 
@@ -71,8 +107,44 @@ export function SignUpForm() {
     }
   }
 
+  const disableSubmit = isSubmitting || tenantLoading || !selectedTenantId;
+
   return (
     <form className="space-y-7" onSubmit={handleSubmit} noValidate>
+      <div className="space-y-2">
+        <Label htmlFor="tenantId" className="text-sm text-slate-200">
+          加入的工作区
+        </Label>
+        <select
+          id="tenantId"
+          name="tenantId"
+          value={selectedTenantId}
+          onChange={(event) => {
+            setSelectedTenantId(event.target.value);
+            setFieldErrors((prev) => {
+              const { tenantId, ...rest } = prev;
+              return rest;
+            });
+            setTenantError(null);
+          }}
+          className="w-full rounded border border-white/15 bg-slate-950/70 px-3 py-2 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
+          disabled={tenantLoading || isSubmitting || !!tenantError}
+          required
+        >
+          {tenantLoading && <option value="">正在加载...</option>}
+          {!tenantLoading && tenants.length === 0 && <option value="">暂无可加入的工作区</option>}
+          {tenants.map((tenant) => (
+            <option key={tenant.id} value={tenant.id}>
+              {tenant.name}（{tenant.slug}）
+            </option>
+          ))}
+        </select>
+        {fieldErrors.tenantId && <p className="text-sm text-rose-300/95">{fieldErrors.tenantId}</p>}
+        {tenantError && !fieldErrors.tenantId && (
+          <p className="text-sm text-rose-300/95">{tenantError}</p>
+        )}
+      </div>
+
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm text-slate-200">
@@ -81,7 +153,7 @@ export function SignUpForm() {
           <Input
             id="name"
             name="name"
-            placeholder="你的名字"
+            placeholder="请输入姓名"
             autoComplete="name"
             required
             disabled={isSubmitting}
@@ -126,7 +198,7 @@ export function SignUpForm() {
 
       <div className="space-y-2">
         <Label htmlFor="password" className="text-sm text-slate-200">
-          密码
+          设置密码
         </Label>
         <Input
           id="password"
@@ -157,9 +229,9 @@ export function SignUpForm() {
       <Button
         type="submit"
         className="w-full bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-500 text-base shadow-[0_18px_45px_rgba(124,58,237,0.35)] hover:from-fuchsia-500 hover:via-violet-500 hover:to-indigo-400"
-        disabled={isSubmitting}
+        disabled={disableSubmit}
       >
-        {isSubmitting ? "正在创建账号..." : "立即注册"}
+        {isSubmitting ? "正在创建账号..." : "提交注册"}
       </Button>
 
       <p className="text-center text-sm text-slate-200/80">

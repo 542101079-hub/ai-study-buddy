@@ -48,11 +48,13 @@ export function SignInForm() {
       });
 
       if (result.ok) {
+        const role = result.payload?.user?.profile?.role;
+        const redirectTo = role === "admin" ? "/tenant-select" : "/dashboard";
         setMessage({
           variant: "success",
           text: result.payload?.message ?? "登录成功",
         });
-        router.replace("/dashboard");
+        router.replace(redirectTo);
         router.refresh();
       } else {
         setMessage({

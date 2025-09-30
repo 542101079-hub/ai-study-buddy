@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useTransition } from "react";
+import { ChangeEvent, FormEvent, useState, useTransition } from "react";
 
 type Member = {
   id: string;
@@ -21,19 +20,181 @@ type Props = {
   currentUserId: string;
 };
 
-const ROLE_OPTIONS: Array<{ value: Member["role"]; label: string }> = [
-  { value: "admin", label: "Administrator" },
-  { value: "user", label: "Member" },
-];
+type FieldErrors = Partial<Record<"name" | "email" | "password" | "username" | "avatarUrl", string>>;
+
+type AdminInviteFormProps = {
+  onCreated: (member: Member) => void;
+  setMessage: (message: string | null) => void;
+  setError: (message: string | null) => void;
+};
+
+
+function toEditableMember(member: Member): EditableMember {
+  return {
+    ...member,
+    draftRole: member.role,
+    draftFullName: member.full_name ?? "",
+  };
+}
+
+function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormProps) {
+  const [formValues, setFormValues] = useState({
+    name: "",
+    email: "",
+    password: "",
+    username: "",
+  });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormValues((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFieldErrors({});
+    setMessage(null);
+    setError(null);
+
+    const payload = {
+      name: formValues.name.trim(),
+      email: formValues.email.trim(),
+      password: formValues.password,
+      username: formValues.username.trim() || undefined,
+    };
+
+    try {
+      const response = await fetch("/api/admin/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const result = (await response.json().catch(() => null)) as
+        | { message?: string; fieldErrors?: FieldErrors; member?: Member }
+        | null;
+
+      if (!response.ok) {
+        setFieldErrors(result?.fieldErrors ?? {});
+        setError(result?.message ?? "创建管理员失败，请稍后再试");
+        return;
+      }
+
+      if (result?.member) {
+        onCreated(result.member);
+      }
+
+      setMessage(result?.message ?? "管理员创建成功");
+      setFieldErrors({});
+      setFormValues({ name: "", email: "", password: "", username: "" });
+    } catch (error) {
+      console.error("[AdminInviteForm] submit failed", error);
+      setError("创建管理员失败，请稍后再试");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="space-y-4 rounded-lg border border-white/10 bg-slate-900/60 p-4 text-white/85 shadow-sm"
+    >
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-white">创建新的管理员</p>
+          <p className="text-xs text-white/60">添加具有管理权限的成员，加入当前工作区。</p>
+        </div>
+        <span className="text-xs text-white/50">新账户将自动分配管理员角色</span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col text-xs text-white/60">
+          姓名
+          <input
+            name="name"
+            value={formValues.name}
+            onChange={handleChange}
+            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
+            placeholder="张三"
+            disabled={isSubmitting}
+            required
+          />
+          {fieldErrors.name && <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.name}</span>}
+        </label>
+        <label className="flex flex-col text-xs text-white/60">
+          用户名（可选）
+          <input
+            name="username"
+            value={formValues.username}
+            onChange={handleChange}
+            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
+            placeholder="仅限字母、数字或下划线"
+            disabled={isSubmitting}
+          />
+          {fieldErrors.username && (
+            <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.username}</span>
+          )}
+        </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col text-xs text-white/60">
+          邮箱
+          <input
+            type="email"
+            name="email"
+            value={formValues.email}
+            onChange={handleChange}
+            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
+            placeholder="name@example.com"
+            disabled={isSubmitting}
+            required
+          />
+          {fieldErrors.email && <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.email}</span>}
+        </label>
+        <label className="flex flex-col text-xs text-white/60">
+          初始密码
+          <input
+            type="password"
+            name="password"
+            value={formValues.password}
+            onChange={handleChange}
+            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
+            placeholder="至少 8 位字符"
+            disabled={isSubmitting}
+            required
+          />
+          {fieldErrors.password && (
+            <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.password}</span>
+          )}
+        </label>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center rounded border border-emerald-500/60 px-3 py-1.5 text-sm text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/30"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "正在创建..." : "创建管理员"}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 export function MemberManager({ initialMembers, currentUserId }: Props) {
-  const [members, setMembers] = useState<EditableMember[]>(() =>
-    initialMembers.map((member) => ({
-      ...member,
-      draftRole: member.role,
-      draftFullName: member.full_name ?? "",
-    })),
-  );
+    const [members, setMembers] = useState<EditableMember[]>(() => initialMembers.map(toEditableMember));
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +206,13 @@ export function MemberManager({ initialMembers, currentUserId }: Props) {
     setMembers((prev) =>
       prev.map((member) => (member.id === memberId ? { ...member, ...patch } : member)),
     );
+  };
+
+  const handleMemberCreated = (member: Member) => {
+    setMembers((prev) => {
+      const next = [...prev, toEditableMember(member)];
+      return next.sort((a, b) => a.username.localeCompare(b.username));
+    });
   };
 
   const handleSave = (memberId: string) => {
@@ -103,6 +271,7 @@ export function MemberManager({ initialMembers, currentUserId }: Props) {
 
   return (
     <div className="space-y-4">
+      <AdminInviteForm onCreated={handleMemberCreated} setMessage={setMessage} setError={setError} />
       {error && <p className="text-sm text-red-400">{error}</p>}
       {message && <p className="text-sm text-emerald-300">{message}</p>}
       <ul className="space-y-4">
@@ -150,11 +319,8 @@ export function MemberManager({ initialMembers, currentUserId }: Props) {
                       className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
                       disabled={isSelf || isPending}
                     >
-                      {ROLE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
+                      <option value="admin">Administrator</option>
+                      <option value="user">Member</option>
                     </select>
                   </label>
                   <button

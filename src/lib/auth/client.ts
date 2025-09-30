@@ -6,7 +6,7 @@ type AuthResponsePayload = {
 };
 
 export async function submitAuthRequest<TBody extends Record<string, unknown>>(
-  endpoint: "/api/auth/login" | "/api/auth/register" | "/api/auth/logout",
+  endpoint: "/api/auth/login" | "/api/auth/register" | "/api/auth/logout" | "/api/auth/admin-register",
   body?: TBody,
 ) {
   const response = await fetch(endpoint, {

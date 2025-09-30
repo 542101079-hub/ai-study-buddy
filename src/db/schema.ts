@@ -26,6 +26,8 @@ export const tenants = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 120 }).notNull(),
     slug: varchar("slug", { length: 64 }).notNull(),
+    logoUrl: text("logo_url"),
+    tagline: text("tagline"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -48,8 +50,8 @@ export const tenants = pgTable(
   },
 ).enableRLS();
 
-export const users = pgTable(
-  "app_users",
+export const appUsers = pgTable(
+  "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     tenantId: uuid("tenant_id")
@@ -64,8 +66,8 @@ export const users = pgTable(
       .notNull(),
   },
   (table) => ({
-    emailUnique: uniqueIndex("app_users_email_unique").on(table.email),
-    tenantIdIdx: index("app_users_tenant_id_idx").on(table.tenantId),
+    emailUnique: uniqueIndex("users_email_unique").on(table.email),
+    tenantIdIdx: index("users_tenant_id_idx").on(table.tenantId),
   }),
 );
 
@@ -139,7 +141,7 @@ export const sessions = pgTable(
       .references(() => tenants.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => appUsers.id, { onDelete: "cascade" }),
     tokenHash: varchar("token_hash", { length: 128 }).notNull(),
     remember: boolean("remember").default(false).notNull(),
     userAgent: varchar("user_agent", { length: 256 }),
@@ -157,13 +159,13 @@ export const sessions = pgTable(
 
 export const tenantRelations = relations(tenants, ({ many }) => ({
   profiles: many(profiles),
-  users: many(users),
+  users: many(appUsers),
   sessions: many(sessions),
 }));
 
-export const userRelations = relations(users, ({ many, one }) => ({
+export const userRelations = relations(appUsers, ({ many, one }) => ({
   tenant: one(tenants, {
-    fields: [users.tenantId],
+    fields: [appUsers.tenantId],
     references: [tenants.id],
   }),
   sessions: many(sessions),
@@ -174,16 +176,19 @@ export const sessionRelations = relations(sessions, ({ one }) => ({
     fields: [sessions.tenantId],
     references: [tenants.id],
   }),
-  user: one(users, {
+  user: one(appUsers, {
     fields: [sessions.userId],
-    references: [users.id],
+    references: [appUsers.id],
   }),
 }));
 
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export type User = typeof appUsers.$inferSelect;
+export type NewUser = typeof appUsers.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
+
+export const users = appUsers;
+

@@ -10,10 +10,10 @@ export type TenantScopedProfile = Pick<
   "id" | "tenant_id" | "role" | "username" | "full_name" | "avatar_url"
 >;
 
-export type TenantSummary = Pick<TenantsTable["Row"], "id" | "name" | "slug">;
+export type TenantSummary = Pick<TenantsTable["Row"], "id" | "name" | "slug" | "logo_url" | "tagline">;
 
 const PROFILE_COLUMNS = "id, tenant_id, role, username, full_name, avatar_url";
-const TENANT_COLUMNS = "id, name, slug";
+const TENANT_COLUMNS = "id, name, slug, logo_url, tagline";
 
 export async function loadTenantScopedProfile(
   supabase: SupabaseClient<Database>,

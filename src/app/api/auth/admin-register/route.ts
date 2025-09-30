@@ -2,9 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
-import { formatValidationErrors, registerSchema } from "@/lib/auth/validation";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { adminRegisterSchema, formatValidationErrors } from "@/lib/auth/validation";
 import { createProfileWithUniqueUsername, normalizeBaseUsername } from "@/lib/auth/register";
+import { supabaseAdmin } from "@/lib/supabase/server";
+import { createTenant, deriveTenantMetadata } from "@/lib/tenants";
 import type { Database } from "@/db/types";
 
 export async function POST(request: Request) {
@@ -15,13 +16,10 @@ export async function POST(request: Request) {
   try {
     json = await request.json();
   } catch {
-    return NextResponse.json(
-      { message: "无法读取提交数据" },
-      { status: 400 },
-    );
+    return NextResponse.json({ message: "无法读取提交数据" }, { status: 400 });
   }
 
-  const parsed = registerSchema.safeParse(json);
+  const parsed = adminRegisterSchema.safeParse(json);
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -33,17 +31,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, email, password, username: providedUsername, avatarUrl, tenantId } = parsed.data;
-
-  if (!tenantId) {
-    return NextResponse.json(
-      {
-        message: "请选择要加入的工作区",
-        fieldErrors: { tenantId: "请选择要加入的工作区" },
-      },
-      { status: 400 },
-    );
-  }
+  const {
+    name,
+    email,
+    password,
+    username: providedUsername,
+    avatarUrl,
+    tenantName,
+    tenantLogoUrl,
+    tenantTagline,
+  } = parsed.data;
 
   try {
     const { data: createUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
@@ -67,7 +64,7 @@ export async function POST(request: Request) {
         );
       }
 
-      console.error("[auth/register] createUser failed", createUserError);
+      console.error("[auth/admin-register] createUser failed", createUserError);
       return NextResponse.json(
         { message: "注册失败，请稍后再试" },
         { status: 500 },
@@ -86,38 +83,29 @@ export async function POST(request: Request) {
     const signInResult = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInResult.error) {
-      console.error("[auth/register] signIn failed", signInResult.error);
+      console.error("[auth/admin-register] signIn failed", signInResult.error);
       return NextResponse.json(
         { message: "注册成功但登录失败，请稍后再试" },
         { status: 500 },
       );
     }
 
-    const { data: tenant, error: tenantError } = await supabaseAdmin
-      .from("tenants")
-      .select("id, name, slug, logo_url, tagline")
-      .eq("id", tenantId)
-      .maybeSingle();
+    const baseUsername = (providedUsername || normalizeBaseUsername(name, email)).toLowerCase();
 
-    if (tenantError) {
-      console.error("[auth/register] load tenant failed", tenantError);
+    const tenantMeta = deriveTenantMetadata(name, baseUsername, email, { tenantName });
+    let tenant;
+    try {
+      tenant = await createTenant(supabaseAdmin, tenantMeta.name, tenantMeta.slugBase, {
+        logoUrl: tenantLogoUrl,
+        tagline: tenantTagline,
+      });
+    } catch (tenantError: any) {
+      console.error("[auth/admin-register] createTenant failed", tenantError);
       return NextResponse.json(
-        { message: "加入工作区失败，请稍后再试" },
+        { message: "工作区创建失败，请稍后再试" },
         { status: 500 },
       );
     }
-
-    if (!tenant) {
-      return NextResponse.json(
-        {
-          message: "选择的工作区不存在",
-          fieldErrors: { tenantId: "请选择有效的工作区" },
-        },
-        { status: 404 },
-      );
-    }
-
-    const baseUsername = (providedUsername || normalizeBaseUsername(name, email)).toLowerCase();
 
     let profile;
     try {
@@ -127,10 +115,10 @@ export async function POST(request: Request) {
         baseUsername,
         fullName: name,
         avatarUrl: avatarUrl ?? null,
-        role: 'user',
+        role: 'admin',
       });
     } catch (profileError: any) {
-      if (profileError && typeof profileError === "object" && profileError.code === "23505") {
+      if ((profileError as { code?: string } | null)?.code === "23505") {
         return NextResponse.json(
           {
             message: "用户名已被使用",
@@ -140,7 +128,7 @@ export async function POST(request: Request) {
         );
       }
 
-      console.error("[auth/register] insertProfile failed", profileError);
+      console.error("[auth/admin-register] insertProfile failed", profileError);
       return NextResponse.json(
         { message: "注册失败，请稍后再试" },
         { status: 500 },
@@ -149,7 +137,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message: "注册成功",
+        message: "管理员创建成功",
         user: {
           id: user.id,
           email: user.email,
@@ -160,7 +148,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("[auth/register] unexpected", error);
+    console.error("[auth/admin-register] unexpected", error);
     return NextResponse.json(
       { message: "注册失败，请稍后再试" },
       { status: 500 },

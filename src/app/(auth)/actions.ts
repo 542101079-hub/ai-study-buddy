@@ -3,75 +3,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatValidationErrors, loginSchema, registerSchema } from "@/lib/auth/validation";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { createTenant, deriveTenantMetadata } from "@/lib/tenants";
+import { createProfileWithUniqueUsername, normalizeBaseUsername } from "@/lib/auth/register";
 import type { Database } from "@/db/types";
-
-type SupabaseDbClient = SupabaseClient<Database>;
-
-const USERNAME_SUFFIX_ATTEMPTS = 5;
-
-function normalizeBaseUsername(name: string | null | undefined, email: string) {
-  const candidateFromName = name
-    ?.trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, "")
-    .slice(0, 24);
-
-  const candidateFromEmail = email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_]+/g, "");
-
-  const base = candidateFromName || candidateFromEmail || "learner";
-  return base.length >= 3 ? base.slice(0, 24) : `${base}${Math.random().toString(36).slice(2, 5)}`;
-}
-
-type ProfileInsertPayload = Pick<
-  Database["public"]["Tables"]["profiles"]["Insert"],
-  "id" | "tenant_id" | "username" | "full_name" | "avatar_url" | "role"
->;
-
-async function insertProfile(
-  client: SupabaseDbClient,
-  profile: ProfileInsertPayload,
-) {
-  const baseUsername = profile.username;
-  let attempt = 0;
-  let currentUsername = baseUsername;
-
-  while (attempt < USERNAME_SUFFIX_ATTEMPTS) {
-    const insertPayload: ProfileInsertPayload = {
-      id: profile.id,
-      tenant_id: profile.tenant_id,
-      username: currentUsername,
-      full_name: profile.full_name ?? null,
-      avatar_url: profile.avatar_url ?? null,
-      role: profile.role ?? 'user',
-    };
-
-    const { data, error } = await client
-      .from("profiles")
-      .insert(insertPayload)
-      .select("id, tenant_id, username, full_name, avatar_url, role")
-      .single();
-
-    if (!error && data) {
-      return data;
-    }
-
-    if ((error as { code?: string }).code === "23505") {
-      currentUsername = `${baseUsername}${Math.random().toString(36).slice(2, 5)}`.slice(0, 24);
-      attempt += 1;
-      continue;
-    }
-
-    throw error;
-  }
-
-  throw new Error("无法生成唯一的用户名，请稍后重试");
-}
-
 
 function extractField(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -91,6 +27,7 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
     email: extractField(formData, "email"),
     password: extractField(formData, "password"),
     avatarUrl: extractField(formData, "avatarUrl") || undefined,
+    tenantId: extractField(formData, "tenantId"),
   };
 
   const parsed = registerSchema.safeParse(payload);
@@ -103,7 +40,15 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
     };
   }
 
-  const { name, email, password, username: providedUsername, avatarUrl } = parsed.data;
+  const { name, email, password, username: providedUsername, avatarUrl, tenantId } = parsed.data;
+
+  if (!tenantId) {
+    return {
+      success: false,
+      message: "请选择要加入的工作区",
+      fieldErrors: { tenantId: "请选择要加入的工作区" },
+    };
+  }
 
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -120,49 +65,59 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
         return {
           success: false,
           message: "邮箱已被使用",
-          fieldErrors: { email: "该邮箱已注册" },
+          fieldErrors: { email: "请使用新的邮箱" },
         };
       }
 
       console.error("[actions/signUp] auth.signUp failed", error);
-      return { success: false, message: "注册失败，请稍后重试" };
+      return { success: false, message: "注册失败，请稍后再试" };
     }
 
     const user = data.user;
     if (!user) {
-      return { success: false, message: "注册失败，请稍后重试" };
+      return { success: false, message: "注册失败，请稍后再试" };
     }
 
     if (!data.session) {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
         console.error("[actions/signUp] signIn fallback failed", signInError);
-        return { success: false, message: "注册成功，但登录失败，请稍后重试" };
+        return { success: false, message: "注册成功但登录失败，请稍后再试" };
       }
+    }
+
+    const { data: tenant, error: tenantError } = await supabaseAdmin
+      .from("tenants")
+      .select("id")
+      .eq("id", tenantId)
+      .maybeSingle();
+
+    if (tenantError) {
+      console.error("[actions/signUp] load tenant failed", tenantError);
+      return { success: false, message: "加入工作区失败，请稍后再试" };
+    }
+
+    if (!tenant) {
+      return {
+        success: false,
+        message: "选择的工作区不存在",
+        fieldErrors: { tenantId: "请选择有效的工作区" },
+      };
     }
 
     const baseUsername = (providedUsername || normalizeBaseUsername(name, email)).toLowerCase();
 
-    const tenantMeta = deriveTenantMetadata(name, baseUsername, email);
-    let tenant;
     try {
-      tenant = await createTenant(supabaseAdmin, tenantMeta.name, tenantMeta.slugBase);
-    } catch (tenantError: any) {
-      console.error("[actions/signUp] createTenant failed", tenantError);
-      return { success: false, message: "创建工作区失败，请稍后再试" };
-    }
-
-    try {
-      await insertProfile(supabaseAdmin, {
+      await createProfileWithUniqueUsername(supabaseAdmin, {
         id: user.id,
-        tenant_id: tenant.id,
-        username: baseUsername,
-        full_name: name,
-        avatar_url: avatarUrl ?? null,
-        role: 'admin',
+        tenantId: tenant.id,
+        baseUsername,
+        fullName: name,
+        avatarUrl: avatarUrl ?? null,
+        role: 'user',
       });
     } catch (profileError: any) {
-      if (profileError && typeof profileError === "object" && profileError.code === "23505") {
+      if ((profileError as { code?: string } | null)?.code === "23505") {
         return {
           success: false,
           message: "用户名已被使用",
@@ -171,13 +126,13 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
       }
 
       console.error("[actions/signUp] insertProfile failed", profileError);
-      return { success: false, message: "注册失败，请稍后重试" };
+      return { success: false, message: "注册失败，请稍后再试" };
     }
 
     return { success: true, message: "注册成功" };
   } catch (error) {
     console.error("[actions/signUp] unexpected", error);
-    return { success: false, message: "注册失败，请稍后重试" };
+    return { success: false, message: "注册失败，请稍后再试" };
   }
 }
 
@@ -225,7 +180,7 @@ export async function signOut(): Promise<AuthActionResult> {
 
   if (error) {
     console.error("[actions/signOut] signOut failed", error);
-    return { success: false, message: "退出登录失败，请稍后重试" };
+    return { success: false, message: "退出登录失败，请稍后再试" };
   }
 
   redirect("/");
