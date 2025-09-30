@@ -40,8 +40,14 @@ export default function SignUpPage() {
               仅需几步即可开启智能学习旅程，系统会为你自动规划近期任务并跟踪进度。
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <SignUpForm />
+            <p className="text-sm text-slate-200/85">
+              想以管理员身份入驻？
+              <Link href="/admin-register" className="ml-1 font-medium text-indigo-200 hover:text-white">
+                前往管理员注册
+              </Link>
+            </p>
           </CardContent>
         </Card>
       </main>

@@ -40,8 +40,14 @@ export default function SignInPage() {
               登录后即可继续你的专属学习计划，并与 AI 伙伴实时协作。
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <SignInForm />
+            <p className="text-sm text-slate-200/85">
+              需要为团队新建管理员账号？
+              <Link href="/admin-register" className="ml-1 font-medium text-indigo-200 hover:text-white">
+                前往管理员注册
+              </Link>
+            </p>
           </CardContent>
         </Card>
       </main>

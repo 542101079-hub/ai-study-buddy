@@ -54,6 +54,9 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
           <BrandLogo subtitle="AI智能学习搭子" />
           <div className="flex items-center gap-3">
+            <Button asChild variant="ghost" className="text-white/85 hover:text-white">
+              <Link href="/admin-register">管理员注册</Link>
+            </Button>
             <Button asChild variant="ghost" className="text-white/88 hover:text-white">
               <Link href="/signin">登录</Link>
             </Button>
@@ -167,4 +170,3 @@ export default function HomePage() {
     </div>
   );
 }
-
