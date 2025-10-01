@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { BrandLogo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { loadTenantSummary, type TenantSummary } from "@/lib/auth/tenant-context";
 import {
   Card,
   CardContent,
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
   }
 
   const supabase = createServerSupabaseClient();
-  const { data: profileData } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select("full_name, username, avatar_url, role, tenant_id")
     .eq("id", session.user.id)
@@ -71,6 +72,23 @@ export default async function DashboardPage() {
       tenant_id: string | null;
     }>();
 
+  if (profileError) {
+    console.error("[dashboard] load profile failed", profileError);
+  }
+
+  let tenantSummary: TenantSummary | null = null;
+
+  if (profileData?.tenant_id) {
+    try {
+      tenantSummary = await loadTenantSummary(supabase, profileData.tenant_id);
+    } catch (tenantError) {
+      console.error("[dashboard] load tenant failed", tenantError);
+    }
+  }
+
+  const tenantDisplayName = tenantSummary?.name ?? "AI Study Buddy";
+  const tenantTagline = tenantSummary?.tagline ?? "AI Study Companion";
+  const tenantLogoUrl = tenantSummary?.logo_url ?? null;
   const displayName =
     profileData?.full_name ||
     profileData?.username ||
@@ -89,7 +107,24 @@ export default async function DashboardPage() {
       </div>
       <div className="container mx-auto flex min-h-screen flex-col gap-14 px-6 pb-20 pt-12 sm:px-10">
         <header className="flex flex-wrap items-center justify-between gap-6">
-          <BrandLogo subtitle="AI Study Companion" />
+          <div className="flex items-center gap-4">
+            {tenantLogoUrl ? (
+              <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-white/20 bg-white/10">
+                <img
+                  src={tenantLogoUrl}
+                  alt={`${tenantDisplayName} logo`}
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <BrandLogo showText={false} />
+            )}
+            <div className="space-y-1">
+              <p className="text-xl font-semibold text-white/95">{tenantDisplayName}</p>
+              <p className="text-sm text-white/70">{tenantTagline}</p>
+            </div>
+          </div>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             {isAdmin && (
               <Button
@@ -215,4 +250,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-

@@ -113,6 +113,10 @@ export const loginSchema = z.object({
   password: z
     .string({ required_error: passwordMessages.required })
     .min(1, passwordMessages.required),
+  tenantId: z
+    .string({ required_error: tenantIdMessages.required })
+    .trim()
+    .uuid(tenantIdMessages.invalid),
   remember: z.boolean().optional().default(false),
 });
 
@@ -130,3 +134,4 @@ export function formatValidationErrors(error: ZodError) {
 
   return formatted;
 }
+

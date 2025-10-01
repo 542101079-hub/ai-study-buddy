@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, tenantId } = parsed.data;
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -70,14 +70,35 @@ export async function POST(request: Request) {
     );
   }
 
+  if (profile.tenant_id !== tenantId) {
+    await supabase.auth.signOut();
+    return NextResponse.json(
+      {
+        message: "该账号不属于所选租户",
+        fieldErrors: { tenantId: "该账号不属于所选租户" },
+      },
+      { status: 403 },
+    );
+  }
+
   let tenant;
   try {
-    tenant = await loadTenantSummary(supabaseAdmin, profile.tenant_id);
+    tenant = await loadTenantSummary(supabaseAdmin, tenantId);
   } catch (tenantError) {
     console.error("[auth/login] load tenant failed", tenantError);
     return NextResponse.json(
       { message: "登录失败，请稍后再试" },
       { status: 500 },
+    );
+  }
+  if (!tenant) {
+    await supabase.auth.signOut();
+    return NextResponse.json(
+      {
+        message: "所选租户不存在或已被删除",
+        fieldErrors: { tenantId: "所选租户不存在或已被删除" },
+      },
+      { status: 404 },
     );
   }
 
