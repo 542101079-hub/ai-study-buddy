@@ -25,10 +25,10 @@ type TenantOption = {
 
 type SignInStage = "credentials" | "tenant";
 
-const TENANT_REQUIRED_MESSAGE = "请选择要登录的租户";
-const TENANT_FETCH_ERROR_MESSAGE = "租户列表加载失败，请稍后再试";
-const NO_TENANT_AVAILABLE_MESSAGE = "暂无可用租户，请联系管理员或先完成租户创建。";
-const CREDENTIALS_INCOMPLETE_MESSAGE = "请填写邮箱和密码后继续";
+const TENANT_REQUIRED_MESSAGE = "Please choose a tenant to continue";
+const TENANT_FETCH_ERROR_MESSAGE = "Unable to load tenant list, please try again";
+const NO_TENANT_AVAILABLE_MESSAGE = "No tenants are available yet. Please contact an administrator or create one.";
+const CREDENTIALS_INCOMPLETE_MESSAGE = "Please enter both email and password";
 
 export function SignInForm() {
   const router = useRouter();
@@ -172,16 +172,16 @@ export function SignInForm() {
       return;
     }
 
-    if (stage === "credentials") {
-      const trimmedEmail = credentials.email.trim();
-      const password = credentials.password;
+    const trimmedEmail = credentials.email.trim();
+    const password = credentials.password;
 
+    if (stage === "credentials") {
       const nextErrors: AuthFieldErrors = {};
       if (!trimmedEmail) {
-        nextErrors.email = "请输入邮箱";
+        nextErrors.email = "Please enter your email";
       }
       if (!password) {
-        nextErrors.password = "请输入密码";
+        nextErrors.password = "Please enter your password";
       }
 
       if (Object.keys(nextErrors).length > 0) {
@@ -214,25 +214,45 @@ export function SignInForm() {
 
     try {
       const result = await submitAuthRequest("/api/auth/login", {
-        email: credentials.email,
-        password: credentials.password,
+        email: trimmedEmail,
+        password,
         remember: credentials.remember,
         tenantId,
       });
 
       if (result.ok) {
         const role = result.payload?.user?.profile?.role;
-        const redirectTo = role === "admin" ? "/tenant-select" : "/dashboard";
+        const availableTenants = Array.isArray(result.payload?.tenants)
+          ? (result.payload?.tenants as TenantOption[])
+          : [];
+        const fallbackTenant = (result.payload?.tenant as TenantOption | undefined) ?? null;
+        if (fallbackTenant && !availableTenants.some((tenantOption) => tenantOption.id === fallbackTenant.id)) {
+          availableTenants.unshift(fallbackTenant);
+        }
+
+        try {
+          sessionStorage.setItem('availableTenants', JSON.stringify(availableTenants));
+          sessionStorage.setItem('activeTenantId', tenantId);
+        } catch (error) {
+          console.warn('[signin] failed to cache tenant list', error);
+        }
+
+        const redirectTo = role === 'admin'
+          ? '/tenant-select'
+          : availableTenants.length > 1
+            ? '/tenant-choice'
+            : '/dashboard';
+
         setMessage({
           variant: "success",
-          text: result.payload?.message ?? "登录成功",
+          text: result.payload?.message ?? "Login successful",
         });
         router.replace(redirectTo);
         router.refresh();
       } else {
         setMessage({
           variant: "error",
-          text: result.payload?.message ?? "登录失败，请稍后重试",
+          text: result.payload?.message ?? "Login failed, please try again later",
         });
         setFieldErrors(result.payload?.fieldErrors ?? {});
         if (result.status === 401 || result.status === 400) {
@@ -241,19 +261,20 @@ export function SignInForm() {
       }
     } catch (error) {
       console.error("[signin] submit failed", error);
-      setMessage({ variant: "error", text: "登录失败，请稍后重试" });
+      setMessage({ variant: "error", text: "Login failed, please try again later" });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  const selectedTenant = tenantOptions.find((tenant) => tenant.id === selectedTenantId);
   const isTenantStage = stage === "tenant";
 
   return (
     <form className="space-y-7" onSubmit={handleSubmit} noValidate>
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm text-slate-200">
-          邮箱
+          Email
         </Label>
         <Input
           id="email"
@@ -273,14 +294,14 @@ export function SignInForm() {
 
       <div className="space-y-2">
         <Label htmlFor="password" className="text-sm text-slate-200">
-          密码
+          Password
         </Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
-          placeholder="至少 8 位字符"
+          placeholder="At least 8 characters"
           required
           value={credentials.password}
           onChange={handlePasswordChange}
@@ -301,53 +322,80 @@ export function SignInForm() {
             onChange={handleRememberChange}
             disabled={isSubmitting || isTenantStage}
           />
-          <span>记住我</span>
+          <span>Remember me</span>
         </label>
         <Link href="/" className="text-violet-200 transition hover:text-white">
-          忘记密码？
+          Forgot password?
         </Link>
       </div>
 
       {isTenantStage && (
-        <div className="space-y-2">
-          <Label htmlFor="tenantId" className="text-sm text-slate-200">
-            登录租户
-          </Label>
-          <select
-            id="tenantId"
-            name="tenantId"
-            value={selectedTenantId}
-            onChange={handleTenantChange}
-            disabled={isSubmitting || isLoadingTenants || tenantOptions.length === 0}
-            required
-            className="w-full rounded-md border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white shadow-sm transition focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <option value="" disabled>
-              {isLoadingTenants ? "正在加载租户..." : "请选择要登录的租户"}
-            </option>
-            {tenantOptions.map((tenant) => (
-              <option key={tenant.id} value={tenant.id}>
-                {`${tenant.name}（${tenant.slug}）`}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="tenantId" className="text-sm text-slate-200">
+              Tenant
+            </Label>
+            <select
+              id="tenantId"
+              name="tenantId"
+              value={selectedTenantId}
+              onChange={handleTenantChange}
+              disabled={isSubmitting || isLoadingTenants || tenantOptions.length === 0}
+              required
+              className="w-full rounded-md border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white shadow-sm transition focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <option value="" disabled>
+                {isLoadingTenants ? "Loading tenants..." : "Select a tenant to sign in"}
               </option>
-            ))}
-          </select>
-          {tenantFetchError && (
-            <p className="text-xs text-amber-300/90">
-              {tenantFetchError}
-              <button
-                type="button"
-                onClick={handleRetryTenants}
-                className="ml-2 text-violet-200 underline-offset-2 hover:underline"
-              >
-                重试
-              </button>
-            </p>
-          )}
-          {!tenantFetchError && !isLoadingTenants && tenantOptions.length === 0 && (
-            <p className="text-xs text-amber-200/80">{NO_TENANT_AVAILABLE_MESSAGE}</p>
-          )}
-          {fieldErrors.tenantId && (
-            <p className="text-sm text-rose-300/95">{fieldErrors.tenantId}</p>
+              {tenantOptions.map((tenant) => (
+                <option key={tenant.id} value={tenant.id}>
+                  {`${tenant.name} (${tenant.slug})`}
+                </option>
+              ))}
+            </select>
+            {tenantFetchError && (
+              <p className="text-xs text-amber-300/90">
+                {tenantFetchError}
+                <button
+                  type="button"
+                  onClick={handleRetryTenants}
+                  className="ml-2 text-violet-200 underline-offset-2 hover:underline"
+                >
+                  Retry
+                </button>
+              </p>
+            )}
+            {!tenantFetchError && !isLoadingTenants && tenantOptions.length === 0 && (
+              <p className="text-xs text-amber-200/80">{NO_TENANT_AVAILABLE_MESSAGE}</p>
+            )}
+            {fieldErrors.tenantId && (
+              <p className="text-sm text-rose-300/95">{fieldErrors.tenantId}</p>
+            )}
+          </div>
+
+          {selectedTenant && (
+            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/60 p-3">
+              {selectedTenant.logo_url ? (
+                <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white/10">
+                  <img
+                    src={selectedTenant.logo_url}
+                    alt={`${selectedTenant.name} logo`}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-base font-semibold">
+                  {selectedTenant.name.slice(0, 2).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white/90">{selectedTenant.name}</p>
+                <p className="truncate text-xs text-white/70">
+                  {selectedTenant.tagline ?? "This tenant has no tagline yet"}
+                </p>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -373,30 +421,32 @@ export function SignInForm() {
             disabled={isSubmitting || isLoadingTenants}
             className="sm:w-auto"
           >
-            返回修改账户
+            Back to credentials
           </Button>
         )}
         <Button
           type="submit"
           className="flex-1 bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-500 text-base shadow-[0_18px_45px_rgba(79,70,229,0.35)] hover:from-violet-500 hover:via-indigo-500 hover:to-sky-400"
           disabled={
-            isSubmitting || (isTenantStage ? !selectedTenantId : false)
+            isSubmitting || (isTenantStage ? !selectedTenantId || isLoadingTenants : false)
           }
         >
           {isSubmitting
-            ? "正在登录..."
+            ? (isTenantStage ? "Signing in..." : "Processing...")
             : isTenantStage
-              ? "登录"
-              : "下一步"}
+              ? "Sign in"
+              : "Next"}
         </Button>
       </div>
 
       <p className="text-center text-sm text-slate-200/80">
-        还没有账号？
+        No account yet?
         <Link href="/signup" className="ml-2 text-violet-200 transition hover:text-white">
-          立即注册
+          Create account
         </Link>
       </p>
     </form>
   );
 }
+
+

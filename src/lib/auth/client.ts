@@ -3,6 +3,8 @@ export type AuthFieldErrors = Record<string, string>;
 type AuthResponsePayload = {
   message?: string;
   fieldErrors?: AuthFieldErrors;
+  user?: Record<string, unknown> | null;
+  tenants?: unknown;
 };
 
 export async function submitAuthRequest<TBody extends Record<string, unknown>>(
