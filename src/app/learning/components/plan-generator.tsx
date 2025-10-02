@@ -55,6 +55,12 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 调试：检查goals数据
+  useEffect(() => {
+    console.log('PlanGeneratorComponent received goals:', goals);
+    console.log('Active goals:', goals.filter(goal => goal.status === 'active'));
+  }, [goals]);
+
   const handleGenerate = async () => {
     if (!selectedGoalId) {
       setError('请先选择一个学习目标');

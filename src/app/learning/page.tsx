@@ -4,7 +4,6 @@ import { LearningDashboard } from './components/learning-dashboard';
 import { GoalManager } from './components/goal-manager';
 import { AIChatComponent } from './components/ai-chat';
 import { PlanGeneratorComponent } from './components/plan-generator';
-import { QuickFix } from './components/quick-fix';
 
 export default async function LearningPage() {
   const session = await getServerSession();
@@ -68,7 +67,15 @@ export default async function LearningPage() {
   if (userProfile?.tenant_id) {
     const { data: goalsData } = await supabaseAdmin
       .from('learning_goals')
-      .select('*')
+      .select(`
+        *,
+        learning_plans (
+          id,
+          title,
+          status,
+          created_at
+        )
+      `)
       .eq('user_id', session.user.id)
       .eq('tenant_id', userProfile.tenant_id)
       .order('created_at', { ascending: false })
@@ -129,9 +136,6 @@ export default async function LearningPage() {
           </div>
         </div>
       </div>
-      
-      {/* 快速修复组件 */}
-      <QuickFix />
     </div>
   );
 }

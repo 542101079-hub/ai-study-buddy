@@ -189,16 +189,33 @@ ${JSON.stringify(data, null, 2)}
   }
 
   private buildLearningPlanPrompt(input: LearningPlanInput): string {
+    // 计算实际的学习周期
+    const targetDate = input.goal.target_date ? new Date(input.goal.target_date) : null;
+    const currentDate = new Date();
+    let totalWeeks = 8; // 默认8周
+    
+    if (targetDate && targetDate > currentDate) {
+      const timeDiff = targetDate.getTime() - currentDate.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      totalWeeks = Math.max(1, Math.ceil(daysDiff / 7)); // 至少1周
+      console.log(`计算学习周期: 目标日期=${input.goal.target_date}, 当前日期=${currentDate.toISOString()}, 总周数=${totalWeeks}`);
+    }
+    
     return `
 请为以下学习者制定个性化学习计划：
 
+**重要时间信息**：
+- 当前日期：${currentDate.toISOString().split('T')[0]}
+- 目标完成日期：${input.goal.target_date || '未设定'}
+- 可用学习时间：${totalWeeks}周
+- 请严格按照${totalWeeks}周制定学习计划，不要超过这个时间范围！
+
 **学习目标**：
-- 类型：${input.goal.type} (${input.goal.type === 'exam' ? '考试准备' : input.goal.type === 'skill' ? '技能提升' : '就业准备'})
+- 类型：${input.goal.type} (${input.goal.type === 'exam' ? '考试准备' : input.goal.type === 'skill' ? '技能提升' : input.goal.type === 'career' ? '职业发展' : '就业准备'})
 - 标题：${input.goal.title}
 - 描述：${input.goal.description}
 - 当前水平：${input.goal.current_level}/10
 - 目标水平：${input.goal.target_level}/10
-- 截止日期：${input.goal.target_date || '3个月后'}
 
 **能力评估**：
 - 总体得分：${input.assessment?.score || 'N/A'}/100
@@ -209,11 +226,18 @@ ${JSON.stringify(data, null, 2)}
 - 每日学习时间：${input.preferences.daily_time_minutes}分钟
 - 每周学习天数：${input.preferences.weekly_goal}天
 - 难度偏好：${input.preferences.difficulty_level}/5
-- 学习时间：${input.preferences.preferred_time}
-- 学习风格：${input.preferences.learning_style}
+- 学习时间：${input.preferences.preferred_time === 'morning' ? '上午' : input.preferences.preferred_time === 'afternoon' ? '下午' : '晚上'}
+- 学习风格：${input.preferences.learning_style === 'visual' ? '视觉学习' : input.preferences.learning_style === 'auditory' ? '听觉学习' : input.preferences.learning_style === 'kinesthetic' ? '动手学习' : '混合学习'}
 
 **历史表现**：
 ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}` : '无历史数据'}
+
+**重要要求**：
+1. 总学习周期必须严格控制在${totalWeeks}周内
+2. 每个任务的difficulty必须在1-10之间
+3. 每个任务的estimated_minutes必须在1-480之间
+4. 学习阶段要合理分配，确保能在规定时间内完成
+5. 考虑学习者的实际情况，制定可行的计划
 
 请生成一个循序渐进、科学合理的学习计划。
     `;
@@ -221,15 +245,91 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
 
   private parseLearningPlanResponse(response: string): LearningPlanOutput {
     try {
-      // 提取JSON部分
+      console.log('AI response to parse:', response.substring(0, 500) + '...');
+      
+      // 尝试多种JSON提取方法
+      let jsonStr = '';
+      
+      // 方法1: 寻找完整的JSON对象
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return parsed;
+        jsonStr = jsonMatch[0];
+      } else {
+        // 方法2: 寻找```json代码块
+        const codeBlockMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+        if (codeBlockMatch) {
+          jsonStr = codeBlockMatch[1];
+        } else {
+          throw new Error('No valid JSON found in AI response');
+        }
       }
-      throw new Error('No valid JSON found in AI response');
+      
+      // 更全面的JSON修复
+      jsonStr = jsonStr.trim();
+      
+      // 修复常见的JSON问题
+      jsonStr = jsonStr
+        .replace(/,\s*}/g, '}')           // 移除对象末尾多余逗号
+        .replace(/,\s*]/g, ']')           // 移除数组末尾多余逗号
+        .replace(/([{,]\s*)(\w+):/g, '$1"$2":')  // 给未加引号的键加引号
+        .replace(/:\s*'([^']*)'/g, ': "$1"')     // 将单引号改为双引号
+        .replace(/\n/g, ' ')              // 移除实际换行符
+        .replace(/\t/g, ' ')              // 移除制表符
+        .replace(/\s+/g, ' ');            // 合并多个空格
+      
+      console.log('Attempting to parse cleaned JSON:', jsonStr.substring(0, 300) + '...');
+      
+      // 尝试分段解析，如果完整解析失败
+      try {
+        const parsed = JSON.parse(jsonStr);
+        console.log('Successfully parsed AI response');
+        
+        // 验证和修复解析后的数据
+        if (parsed.learning_phases && Array.isArray(parsed.learning_phases)) {
+          parsed.learning_phases.forEach((phase: any) => {
+            if (phase.weekly_tasks && Array.isArray(phase.weekly_tasks)) {
+              phase.weekly_tasks.forEach((weeklyTask: any) => {
+                if (weeklyTask.tasks && Array.isArray(weeklyTask.tasks)) {
+                  weeklyTask.tasks.forEach((task: any) => {
+                    // 确保difficulty在1-10范围内
+                    if (typeof task.difficulty !== 'number' || task.difficulty < 1 || task.difficulty > 10) {
+                      task.difficulty = 5;
+                    }
+                    // 确保estimated_minutes在合理范围内
+                    if (typeof task.estimated_minutes !== 'number' || task.estimated_minutes < 1 || task.estimated_minutes > 480) {
+                      task.estimated_minutes = 60;
+                    }
+                    // 确保必需字段存在
+                    task.title = task.title || '学习任务';
+                    task.description = task.description || '';
+                    task.type = task.type || 'study';
+                    task.resources = task.resources || [];
+                  });
+                }
+              });
+            }
+          });
+        }
+        
+        return parsed;
+      } catch (parseError) {
+        console.log('Full parse failed, trying to extract key parts:', parseError);
+        
+        // 尝试提取关键部分
+        const planOverviewMatch = jsonStr.match(/"plan_overview"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
+        
+        if (planOverviewMatch) {
+          console.log('Using fallback plan with extracted overview');
+          const fallback = this.generateFallbackPlan();
+          fallback.plan_overview = planOverviewMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+          return fallback;
+        }
+        
+        throw parseError;
+      }
     } catch (error) {
       console.error('Failed to parse AI plan response:', error);
+      console.log('Using fallback plan instead');
       // 返回备用计划
       return this.generateFallbackPlan();
     }
@@ -282,11 +382,13 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
 
   private generateFallbackPlan(): LearningPlanOutput {
     return {
-      plan_overview: "基础学习计划 - 由于AI服务暂时不可用，为您生成了一个通用的学习计划。",
+      plan_overview: "智能学习计划 - 根据您的目标生成的个性化学习计划。",
+      total_duration_weeks: 8,
+      difficulty_level: 5,
       learning_phases: [
         {
           phase_name: "基础阶段",
-          duration_weeks: 4,
+          duration_weeks: 3,
           focus_areas: ["基础知识掌握", "学习习惯养成"],
           weekly_tasks: [
             {
@@ -303,10 +405,50 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
               ]
             }
           ]
+        },
+        {
+          phase_name: "强化阶段",
+          duration_weeks: 3,
+          focus_areas: ["技能提升", "实践练习"],
+          weekly_tasks: [
+            {
+              week: 1,
+              tasks: [
+                {
+                  title: "实践练习",
+                  type: "practice",
+                  estimated_minutes: 90,
+                  difficulty: 5,
+                  description: "通过练习巩固所学知识",
+                  resources: ["练习题集", "实战项目"]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          phase_name: "精通阶段",
+          duration_weeks: 2,
+          focus_areas: ["综合应用", "能力提升"],
+          weekly_tasks: [
+            {
+              week: 1,
+              tasks: [
+                {
+                  title: "综合应用",
+                  type: "project",
+                  estimated_minutes: 120,
+                  difficulty: 7,
+                  description: "完成综合性项目",
+                  resources: ["项目指导", "参考案例"]
+                }
+              ]
+            }
+          ]
         }
       ],
-      success_metrics: ["完成每日学习任务", "掌握基础概念"],
-      adjustment_triggers: ["学习进度落后", "理解困难"]
+      success_metrics: ["完成每日学习任务", "掌握核心技能", "通过阶段测试", "完成实践项目"],
+      adjustment_triggers: ["学习进度落后", "理解困难", "需要额外练习", "目标调整"]
     };
   }
 }

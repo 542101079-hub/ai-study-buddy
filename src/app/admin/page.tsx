@@ -49,14 +49,6 @@ export default async function AdminPage() {
           只有管理员可以访问此页面并管理同一租户内的成员。
         </p>
         
-        <div className="pt-4">
-          <a 
-            href="/admin/database"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm transition-colors"
-          >
-            🛠️ 数据库管理工具
-          </a>
-        </div>
       </header>
       <AdminClient
         initialTenant={tenant}

@@ -137,6 +137,127 @@ export function GoalManager({ tenantId }: Props) {
     }
   };
 
+  const handleViewDetails = (goal: LearningGoal) => {
+    const planInfo = goal.learning_plans && goal.learning_plans.length > 0 
+      ? `\n\n📋 学习计划 (${goal.learning_plans.length}个):\n${goal.learning_plans.map(plan => `• ${plan.title} (${plan.status})`).join('\n')}`
+      : '\n\n📋 学习计划：暂无';
+    
+    alert(`查看目标详情：\n\n标题：${goal.title}\n描述：${goal.description || '无'}\n类型：${getTypeLabel(goal.type)}\n当前水平：${goal.current_level}\n目标水平：${goal.target_level}\n目标日期：${goal.target_date ? new Date(goal.target_date).toLocaleDateString() : '无'}\n状态：${goal.status}${planInfo}`);
+  };
+
+  const handleViewPlan = async (goal: LearningGoal) => {
+    if (!goal.learning_plans || goal.learning_plans.length === 0) {
+      alert('该目标暂无学习计划');
+      return;
+    }
+
+    try {
+      // 获取最新的学习计划详情
+      const planId = goal.learning_plans[0].id;
+      const response = await fetch(`/api/learning/plans/${planId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const plan = data.plan;
+        
+        // 格式化显示计划内容
+        let planContent = `📋 ${plan.title}\n\n`;
+        planContent += `📖 计划概述：\n${plan.description || '暂无描述'}\n\n`;
+        
+        // 从plan_data中获取持续时间和难度
+        let duration = '未设定';
+        let difficulty = '未设定';
+        if (plan.plan_data) {
+          try {
+            const planData = typeof plan.plan_data === 'string' 
+              ? JSON.parse(plan.plan_data) 
+              : plan.plan_data;
+            
+            console.log('Plan data for display:', planData);
+            
+            duration = planData.total_duration_weeks ? `${planData.total_duration_weeks}周` : '未设定';
+            difficulty = planData.difficulty_level ? `${planData.difficulty_level}/10` : '未设定';
+            
+            console.log('Extracted duration:', duration, 'difficulty:', difficulty);
+          } catch (e) {
+            console.log('Failed to parse plan_data:', e);
+          }
+        }
+        
+        planContent += `⏱️ 持续时间：${duration}\n`;
+        planContent += `📊 难度等级：${difficulty}\n`;
+        planContent += `📅 创建时间：${new Date(plan.created_at).toLocaleDateString()}\n`;
+        planContent += `🎯 状态：${plan.status}\n\n`;
+        
+        if (plan.plan_content) {
+          try {
+            const content = typeof plan.plan_content === 'string' 
+              ? JSON.parse(plan.plan_content) 
+              : plan.plan_content;
+            
+            if (content.plan_overview) {
+              planContent += `📝 学习概览：\n${content.plan_overview}\n\n`;
+            }
+            
+            if (content.learning_phases && content.learning_phases.length > 0) {
+              planContent += `📚 学习阶段：\n`;
+              content.learning_phases.forEach((phase: any, index: number) => {
+                planContent += `${index + 1}. ${phase.phase_name} (${phase.duration_weeks}周)\n`;
+                if (phase.focus_areas) {
+                  planContent += `   重点：${phase.focus_areas.join(', ')}\n`;
+                }
+              });
+            }
+          } catch (e) {
+            planContent += `📄 计划内容：${plan.plan_content}\n`;
+          }
+        }
+        
+        alert(planContent);
+      } else {
+        alert('获取计划详情失败，请重试');
+      }
+    } catch (error) {
+      console.error('Failed to fetch plan details:', error);
+      alert('获取计划详情失败，请重试');
+    }
+  };
+
+  const handleGeneratePlan = async (goal: LearningGoal) => {
+    console.log('Generating plan for goal:', goal);
+    try {
+      const response = await fetch('/api/learning/plans/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          goalId: goal.id,
+          preferences: {
+            daily_time: 60,
+            weekly_frequency: 5,
+            difficulty: 'moderate',
+            preferred_time: 'evening',
+            learning_style: 'mixed'
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`学习计划生成成功！\n\n${data.plan?.title || '新学习计划'}\n\n请刷新页面查看详细计划。`);
+        // 重新加载目标列表
+        loadGoals();
+      } else {
+        const errorData = await response.json();
+        alert(`生成计划失败: ${errorData.error || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('Failed to generate plan:', error);
+      alert('生成计划失败，请重试');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="bg-slate-900/60 rounded-xl border border-white/10 p-6 backdrop-blur">
@@ -311,15 +432,27 @@ export function GoalManager({ tenantId }: Props) {
                     size="sm"
                     variant="outline"
                     className="border-white/20 text-white/90 hover:bg-white/10"
+                    onClick={() => handleViewDetails(goal)}
                   >
                     查看详情
                   </Button>
+                  {goal.learning_plans && goal.learning_plans.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-green-400/30 text-green-400 hover:bg-green-400/10"
+                      onClick={() => handleViewPlan(goal)}
+                    >
+                      查看计划
+                    </Button>
+                  )}
                   {goal.status === 'active' && (
                     <Button
                       size="sm"
                       className="bg-violet-600 hover:bg-violet-700 text-white"
+                      onClick={() => handleGeneratePlan(goal)}
                     >
-                      生成计划
+                      {goal.learning_plans && goal.learning_plans.length > 0 ? '重新生成' : '生成计划'}
                     </Button>
                   )}
                 </div>
