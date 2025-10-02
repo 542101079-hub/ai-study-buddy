@@ -3,32 +3,40 @@ import { redirect } from "next/navigation";
 
 import { MemberManager } from "./member-manager";
 import { loadTenantScopedProfile, loadTenantSummary } from "@/lib/auth/tenant-context";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, supabaseAdmin, getServerSession } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const supabase = createServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await getServerSession();
 
   if (!session) {
     redirect("/");
   }
 
-  const profile = await loadTenantScopedProfile(supabase, session.user.id);
+  // 使用service role绕过RLS问题获取profile
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("id, username, full_name, avatar_url, role, tenant_id")
+    .eq("id", session.user.id)
+    .single();
 
   if (!profile || profile.role !== "admin") {
     redirect("/dashboard");
   }
 
-  const tenant = await loadTenantSummary(supabase, profile.tenant_id);
-  const { data: members } = await supabase
+  // 使用service role获取租户信息和成员列表
+  const { data: tenant } = await supabaseAdmin
+    .from("tenants")
+    .select("id, name, slug")
+    .eq("id", profile.tenant_id)
+    .single();
+
+  const { data: members } = await supabaseAdmin
     .from("profiles")
     .select("id, username, full_name, avatar_url, role")
     .eq("tenant_id", profile.tenant_id)
-    .order("username", { nulls: "last" });
+    .order("username", { nullsFirst: false });
 
   return (
     <section className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-12">

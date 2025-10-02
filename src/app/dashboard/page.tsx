@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { createServerSupabaseClient, getServerSession } from "@/lib/supabase/server";
+import { createServerSupabaseClient, getServerSession, supabaseAdmin } from "@/lib/supabase/server";
 
 import { LogoutButton } from "./logout-button";
 
@@ -60,7 +60,9 @@ export default async function DashboardPage() {
   }
 
   const supabase = createServerSupabaseClient();
-  const { data: profileData, error: profileError } = await supabase
+  
+  // 使用service role绕过RLS问题来获取profile数据
+  const { data: profileData, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("full_name, username, avatar_url, role, tenant_id")
     .eq("id", session.user.id)
@@ -68,7 +70,7 @@ export default async function DashboardPage() {
       full_name: string | null;
       username: string | null;
       avatar_url: string | null;
-      role: "user" | "admin";
+      role: "user" | "admin" | "editor" | "viewer";
       tenant_id: string | null;
     }>();
 

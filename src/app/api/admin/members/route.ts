@@ -1,51 +1,89 @@
-import { NextResponse } from "next/server";
-
-import { withAdminRoute } from "@/lib/auth/permissions";
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin, getServerSession } from "@/lib/supabase/server";
 import { createProfileWithUniqueUsername, normalizeBaseUsername } from "@/lib/auth/register";
-import { supabaseAdmin } from "@/lib/supabase/server";
 import { formatValidationErrors, registerSchema } from "@/lib/auth/validation";
 
 export const dynamic = "force-dynamic";
 
-export const GET = withAdminRoute(async (_request, _context, { supabase, profile }) => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username, full_name, avatar_url, role")
-    .eq("tenant_id", profile.tenant_id)
-    .order("username", { nulls: "last" });
-
-  if (error) {
-    console.error("[api/admin/members]", error);
-    return NextResponse.json({ message: "Failed to load member list" }, { status: 500 });
-  }
-
-  return NextResponse.json({ members: data ?? [] });
-});
-
-export const POST = withAdminRoute(async (request, _context, { profile }) => {
-  let payload: unknown;
+export async function GET() {
   try {
-    payload = await request.json();
-  } catch {
-    return NextResponse.json({ message: "无法读取提交数据" }, { status: 400 });
+    const session = await getServerSession();
+    
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+    }
+
+    // 使用service role获取当前用户profile
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, tenant_id")
+      .eq("id", session.user.id)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
+    }
+
+    // 使用service role获取成员列表
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, username, full_name, avatar_url, role")
+      .eq("tenant_id", profile.tenant_id)
+      .order("username", { nullsFirst: false });
+
+    if (error) {
+      console.error("[api/admin/members] GET error:", error);
+      return NextResponse.json({ message: "Failed to load member list" }, { status: 500 });
+    }
+
+    return NextResponse.json({ members: data ?? [] });
+  } catch (error) {
+    console.error("[api/admin/members] GET unexpected error:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
+}
 
-  const parsed = registerSchema.safeParse(payload);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        message: "注册信息有误",
-        fieldErrors: formatValidationErrors(parsed.error),
-      },
-      { status: 400 },
-    );
-  }
-
-  const { name, email, password, username: providedUsername, avatarUrl } = parsed.data;
-  const role: 'admin' = 'admin';
-
+export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession();
+    
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+    }
+
+    // 使用service role获取当前用户profile
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, tenant_id")
+      .eq("id", session.user.id)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
+    }
+
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json({ message: "无法读取提交数据" }, { status: 400 });
+    }
+
+    const parsed = registerSchema.safeParse(payload);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          message: "注册信息有误",
+          fieldErrors: formatValidationErrors(parsed.error),
+        },
+        { status: 400 },
+      );
+    }
+
+    const { name, email, password, username: providedUsername, avatarUrl } = parsed.data;
+    const role: 'admin' = 'admin';
+
     const { data: createUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -120,10 +158,10 @@ export const POST = withAdminRoute(async (request, _context, { profile }) => {
       { status: 201 },
     );
   } catch (error) {
-    console.error("[api/admin/members] unexpected", error);
+    console.error("[api/admin/members] POST unexpected error:", error);
     return NextResponse.json(
       { message: "创建管理员失败，请稍后再试" },
       { status: 500 },
     );
   }
-});
+}

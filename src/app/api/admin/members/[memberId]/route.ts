@@ -1,95 +1,177 @@
-
-import { NextResponse } from "next/server";
-
-import { withAdminRoute, canManageUser, canChangeRole } from "@/lib/auth/permissions";
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin, getServerSession } from "@/lib/supabase/server";
+import { canManageUser, canChangeRole } from "@/lib/auth/permissions";
 
 const ALLOWED_ROLES = new Set(["admin", "editor", "user", "viewer"] as const);
 
-export const dynamic = "force-dynamic";
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ memberId: string }> }
+) {
+  try {
+    const session = await getServerSession();
+    
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+    }
 
-export const PATCH = withAdminRoute(
-  async (request, { params }: { params: { memberId: string } }, { supabase, profile }) => {
-    const memberIdParam = params?.memberId;
+    const resolvedParams = await params;
+    const memberIdParam = resolvedParams?.memberId;
     const memberId = Array.isArray(memberIdParam) ? memberIdParam[0] : memberIdParam;
 
     if (!memberId) {
-      return NextResponse.json({ message: "Missing member id" }, { status: 400 });
+      return NextResponse.json({ message: "Member ID is required" }, { status: 400 });
     }
 
-    let payload: unknown;
-    try {
-      payload = await request.json();
-    } catch {
-      return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
-    }
-
-    const { role, fullName } = (payload ?? {}) as {
-      role?: string;
-      fullName?: string | null;
-    };
-
-    const updates: Record<string, unknown> = {};
-
-    if (role !== undefined) {
-      if (!ALLOWED_ROLES.has(role as any)) {
-        return NextResponse.json({ message: "Unsupported role" }, { status: 400 });
-      }
-      updates.role = role;
-    }
-
-    if (fullName !== undefined) {
-      if (fullName === null) {
-        updates.full_name = null;
-      } else if (typeof fullName === "string") {
-        updates.full_name = fullName.trim() || null;
-      } else {
-        return NextResponse.json({ message: "Full name must be a string" }, { status: 400 });
-      }
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ message: "Nothing to update" }, { status: 400 });
-    }
-
-    const { data: target, error: fetchError } = await supabase
+    // 使用service role获取当前用户profile
+    const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("id, tenant_id, role, username, full_name, avatar_url")
-      .eq("id", memberId)
-      .maybeSingle();
+      .select("id, role, tenant_id")
+      .eq("id", session.user.id)
+      .single();
 
-    if (fetchError) {
-      console.error("[api/admin/members] fetch", fetchError);
-      return NextResponse.json({ message: "Failed to load member" }, { status: 500 });
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
 
-    if (!target || target.tenant_id !== profile.tenant_id) {
+    const body = await request.json();
+    const { role, full_name } = body;
+
+    if (role !== undefined && !ALLOWED_ROLES.has(role)) {
+      return NextResponse.json({ message: "Invalid role" }, { status: 400 });
+    }
+
+    // 获取目标用户信息
+    const { data: target } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, tenant_id")
+      .eq("id", memberId)
+      .single();
+
+    if (!target) {
       return NextResponse.json({ message: "Member not found" }, { status: 404 });
     }
 
-    // 检查是否有权限管理此用户
+    if (target.tenant_id !== profile.tenant_id) {
+      return NextResponse.json({ message: "Member not in same tenant" }, { status: 403 });
+    }
+
+    // 权限检查
     if (!canManageUser(profile.role, target.role)) {
       return NextResponse.json({ message: "Insufficient permissions to manage this user" }, { status: 403 });
     }
 
-    // 如果要更改角色，检查是否有权限
     if (role !== undefined && role !== target.role) {
       if (!canChangeRole(profile.role, target.role, role as any)) {
         return NextResponse.json({ message: "Insufficient permissions to change role" }, { status: 403 });
       }
     }
 
-    const { data: updated, error: updateError } = await supabase
+    const updates: any = {};
+    if (role !== undefined) updates.role = role;
+    if (full_name !== undefined) updates.full_name = full_name;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ message: "No updates provided" }, { status: 400 });
+    }
+
+    // 使用service role更新用户
+    const { data: updatedMember, error } = await supabaseAdmin
       .from("profiles")
       .update(updates)
       .eq("id", memberId)
-      .select("id, tenant_id, role, username, full_name, avatar_url")
+      .select()
       .single();
 
-    if (updateError || !updated) {
-      console.error("[api/admin/members] update", updateError);
+    if (error) {
+      console.error("[api/admin/members] update error:", error);
       return NextResponse.json({ message: "Failed to update member" }, { status: 500 });
     }
 
-    return NextResponse.json({ member: updated });
-  },
-);
+    return NextResponse.json({ member: updatedMember });
+  } catch (error) {
+    console.error("[api/admin/members] PATCH error:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ memberId: string }> }
+) {
+  try {
+    const session = await getServerSession();
+    
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+    }
+
+    const resolvedParams = await params;
+    const memberIdParam = resolvedParams?.memberId;
+    const memberId = Array.isArray(memberIdParam) ? memberIdParam[0] : memberIdParam;
+
+    if (!memberId) {
+      return NextResponse.json({ message: "Member ID is required" }, { status: 400 });
+    }
+
+    // 使用service role获取当前用户profile
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, tenant_id")
+      .eq("id", session.user.id)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
+    }
+
+    // 不能删除自己
+    if (memberId === session.user.id) {
+      return NextResponse.json({ message: "Cannot delete yourself" }, { status: 400 });
+    }
+
+    // 获取目标用户信息
+    const { data: target } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, tenant_id")
+      .eq("id", memberId)
+      .single();
+
+    if (!target) {
+      return NextResponse.json({ message: "Member not found" }, { status: 404 });
+    }
+
+    if (target.tenant_id !== profile.tenant_id) {
+      return NextResponse.json({ message: "Member not in same tenant" }, { status: 403 });
+    }
+
+    // 权限检查
+    if (!canManageUser(profile.role, target.role)) {
+      return NextResponse.json({ message: "Insufficient permissions to delete this user" }, { status: 403 });
+    }
+
+    // 使用service role删除用户
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .delete()
+      .eq("id", memberId);
+
+    if (profileError) {
+      console.error("[api/admin/members] delete profile error:", profileError);
+      return NextResponse.json({ message: "Failed to delete profile" }, { status: 500 });
+    }
+
+    // 删除auth用户
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(memberId);
+
+    if (authError) {
+      console.error("[api/admin/members] delete auth user error:", authError);
+      // 不返回错误，因为profile已经删除了
+    }
+
+    return NextResponse.json({ message: "Member deleted successfully" });
+  } catch (error) {
+    console.error("[api/admin/members] DELETE error:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
+}

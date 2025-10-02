@@ -221,11 +221,11 @@ export function SignInForm() {
       });
 
       if (result.ok) {
-        const role = result.payload?.user?.profile?.role;
+        const role = (result.payload as any)?.user?.profile?.role;
         const availableTenants = Array.isArray(result.payload?.tenants)
           ? (result.payload?.tenants as TenantOption[])
           : [];
-        const fallbackTenant = (result.payload?.tenant as TenantOption | undefined) ?? null;
+        const fallbackTenant = ((result.payload as any)?.tenant as TenantOption | undefined) ?? null;
         if (fallbackTenant && !availableTenants.some((tenantOption) => tenantOption.id === fallbackTenant.id)) {
           availableTenants.unshift(fallbackTenant);
         }
