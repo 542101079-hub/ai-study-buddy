@@ -74,6 +74,16 @@ export default async function DashboardPage() {
 
   if (profileError) {
     console.error("[dashboard] load profile failed", profileError);
+    // 如果profile不存在，重定向到tenant选择页面
+    if (profileError.code === 'PGRST116' || !profileData) {
+      redirect("/tenant-select");
+    }
+  }
+
+  // 如果没有错误但也没有profile数据，同样重定向
+  if (!profileData) {
+    console.warn("[dashboard] profile data is null, redirecting to tenant selection");
+    redirect("/tenant-select");
   }
 
   let tenantSummary: TenantSummary | null = null;

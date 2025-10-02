@@ -14,9 +14,17 @@ export default async function TenantSelectPage() {
   }
 
   const supabase = createServerSupabaseClient();
-  const profile = await loadTenantScopedProfile(supabase, session.user.id);
+  
+  let profile;
+  try {
+    profile = await loadTenantScopedProfile(supabase, session.user.id);
+  } catch (error) {
+    console.error("[tenant-select] load profile failed", error);
+    redirect("/signup");
+  }
 
   if (!profile) {
+    // 用户没有profile，重定向到注册页面
     redirect("/signup");
   }
 
