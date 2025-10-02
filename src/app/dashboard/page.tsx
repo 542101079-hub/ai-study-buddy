@@ -18,37 +18,37 @@ import { LogoutButton } from "./logout-button";
 
 const HIGHLIGHTS = [
   {
-    title: "Focus time",
+    title: "专注时长",
     value: "6.8h",
-    description: "Up 12% compared to last week",
+    description: "较上周提升 12%",
   },
   {
-    title: "Plans completed",
+    title: "完成计划",
     value: "5",
-    description: "You are ahead of the weekly target",
+    description: "超出本周目标进度",
   },
   {
-    title: "Average session",
+    title: "平均时长",
     value: "2.5h",
-    description: "Daily streak maintained for 9 days",
+    description: "已保持 9 天连续学习",
   },
 ];
 
 const QUICK_ACTIONS = [
   {
-    title: "Review study plan",
-    description: "Check upcoming focus areas and adjust your schedule.",
-    cta: "View plan",
+    title: "查看学习计划",
+    description: "提前掌握重点内容，灵活调整时间安排。",
+    cta: "查看计划",
   },
   {
-    title: "Start next session",
-    description: "Jump into the next AI-guided practice block.",
-    cta: "Begin session",
+    title: "开始下一次学习",
+    description: "进入下一段 AI 引导的练习模块。",
+    cta: "开始学习",
   },
   {
-    title: "Capture insights",
-    description: "Record key takeaways to reinforce long-term memory.",
-    cta: "Add note",
+    title: "记录学习心得",
+    description: "随手记下关键收获，巩固长期记忆。",
+    cta: "添加笔记",
   },
 ];
 
@@ -86,17 +86,17 @@ export default async function DashboardPage() {
     }
   }
 
-  const tenantDisplayName = tenantSummary?.name ?? "AI Study Buddy";
-  const tenantTagline = tenantSummary?.tagline ?? "AI Study Companion";
+  const tenantDisplayName = tenantSummary?.name ?? "AI 学习伙伴";
+  const tenantTagline = tenantSummary?.tagline ?? "智能学习搭档";
   const tenantLogoUrl = tenantSummary?.logo_url ?? null;
   const displayName =
     profileData?.full_name ||
     profileData?.username ||
     session.user.email?.split("@")[0] ||
-    "Learner";
+    "学习者";
 
   const isAdmin = profileData?.role === "admin";
-  const roleLabel = isAdmin ? "Administrator" : "Member";
+  const roleLabel = isAdmin ? "管理员" : "成员";
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
               <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-white/20 bg-white/10">
                 <img
                   src={tenantLogoUrl}
-                  alt={`${tenantDisplayName} logo`}
+                  alt={`${tenantDisplayName} 徽标`}
                   className="h-full w-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -133,11 +133,11 @@ export default async function DashboardPage() {
                 size="sm"
                 className="border-emerald-500/60 text-emerald-200 hover:bg-emerald-500/20"
               >
-                <Link href="/admin">Manage workspace</Link>
+                <Link href="/admin">管理学习空间</Link>
               </Button>
             )}
             <div className="text-right text-sm text-white/92">
-              <p>Welcome back, {displayName}</p>
+              <p>欢迎回来，{displayName}</p>
               <p className="text-xs text-white/75">{roleLabel}</p>
             </div>
             <LogoutButton className="border-violet-700/60 text-white/85 hover:bg-violet-900/70" />
@@ -170,13 +170,13 @@ export default async function DashboardPage() {
             <Card className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <CardTitle className="text-2xl font-semibold">Today&apos;s focus</CardTitle>
+                  <CardTitle className="text-2xl font-semibold">今日重点</CardTitle>
                   <CardDescription className="text-sm text-white/90">
-                    Stay aligned with your goal for the week and balance study blocks with rest.
+                    围绕本周目标安排学习节奏，并注意劳逸结合。
                   </CardDescription>
                 </div>
                 <Button size="sm" className="bg-violet-900/70 hover:bg-violet-700">
-                  Adjust plan
+                  调整计划
                 </Button>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
@@ -197,22 +197,22 @@ export default async function DashboardPage() {
 
             <Card className="flex flex-col justify-between border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-2xl font-semibold">Daily ritual</CardTitle>
+                <CardTitle className="text-2xl font-semibold">每日习惯</CardTitle>
                 <CardDescription className="text-sm text-white/92">
-                  Pair deep work sprints with quick reviews to reinforce retention.
+                  将高效专注与快速复盘结合，强化记忆效果。
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-white/90">
                 <p>
-                  Start with a <span className="underline">10 minute recap</span> of yesterday&apos;s notes.
+                  先进行<span className="underline">10 分钟快速回顾</span>，整理昨日笔记。
                 </p>
-                <p>Schedule blocks of 25 minutes study + 5 minutes reflection to stay fresh.</p>
+                <p>采用 25 分钟学习 + 5 分钟复盘的节奏，保持专注与灵活。</p>
                 <Button
                   variant="outline"
                   className="border-violet-700/60 text-white/85 hover:bg-violet-900/70"
                   size="sm"
                 >
-                  View checklist
+                  查看清单
                 </Button>
               </CardContent>
             </Card>
@@ -222,9 +222,9 @@ export default async function DashboardPage() {
             <Card className="border-emerald-600/50 bg-gradient-to-br from-emerald-900/70 via-emerald-800/60 to-slate-900/80 text-white backdrop-blur-xl">
               <CardHeader className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <CardTitle className="text-2xl font-semibold">Workspace insights</CardTitle>
+                  <CardTitle className="text-2xl font-semibold">空间概览</CardTitle>
                   <CardDescription className="text-sm text-white/85">
-                    Review team progress and update member permissions when necessary.
+                    查看团队进度，并在需要时调整成员权限。
                   </CardDescription>
                 </div>
                 <Button
@@ -233,15 +233,14 @@ export default async function DashboardPage() {
                   size="sm"
                   className="border-emerald-500/60 text-emerald-200 hover:bg-emerald-500/20"
                 >
-                  <Link href="/admin">Open admin console</Link>
+                  <Link href="/admin">进入管理中心</Link>
                 </Button>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-white/85">
                 <p>
-                  Members inherit access based on their role. Promote trusted collaborators to
-                  administrators to help manage the workspace.
+                  成员会根据角色继承相应权限。可将值得信赖的同伴升级为管理员，共同维护空间。
                 </p>
-                <p>Only administrators can see this section.</p>
+                <p>仅管理员可以查看此模块。</p>
               </CardContent>
             </Card>
           )}

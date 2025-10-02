@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 import { loadTenantScopedProfile, loadTenantSummary, type TenantSummary } from "@/lib/auth/tenant-context";
+import { isTenantMembershipTableMissing } from "@/lib/auth/memberships";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Database } from "@/db/types";
 
@@ -24,28 +25,37 @@ export async function GET() {
 
   try {
     const { data: tenantMemberships, error: tenantMembershipsError } = await supabaseAdmin
-      .from("users")
-      .select("tenant_id, tenants:tenant_id (id, name, slug, logo_url, tagline)")
+      .from("app_users")
+      .select("tenant_id")
       .eq("email", email);
 
     if (tenantMembershipsError) {
-      throw tenantMembershipsError;
-    }
-
-    const mappedTenants = Array.isArray(tenantMemberships)
-      ? tenantMemberships
-          .map((membership) => membership.tenants)
-          .filter((value): value is TenantSummary => Boolean(value))
-      : [];
-
-    const seen = new Set<string>();
-    availableTenants = mappedTenants.filter((tenant) => {
-      if (seen.has(tenant.id)) {
-        return false;
+      if (isTenantMembershipTableMissing(tenantMembershipsError)) {
+        console.warn("[api/auth/tenants] tenant membership list unavailable", tenantMembershipsError);
+      } else {
+        throw tenantMembershipsError;
       }
-      seen.add(tenant.id);
-      return true;
-    });
+    } else if (Array.isArray(tenantMemberships)) {
+      const seen = new Set<string>();
+
+      for (const membership of tenantMemberships) {
+        const membershipTenantId = membership?.tenant_id;
+        if (!membershipTenantId || seen.has(membershipTenantId)) {
+          continue;
+        }
+
+        seen.add(membershipTenantId);
+
+        try {
+          const summary = await loadTenantSummary(supabaseAdmin, membershipTenantId);
+          if (summary) {
+            availableTenants.push(summary);
+          }
+        } catch (summaryError) {
+          console.error("[api/auth/tenants] load tenant summary failed", summaryError);
+        }
+      }
+    }
   } catch (error) {
     console.error("[api/auth/tenants] load memberships failed", error);
   }

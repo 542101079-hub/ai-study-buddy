@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 import { loadTenantSummary } from "@/lib/auth/tenant-context";
+import { isTenantMembershipTableMissing } from "@/lib/auth/memberships";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Database } from "@/db/types";
 
@@ -35,13 +36,21 @@ export async function POST(request: Request) {
 
   try {
     const { data: membership, error: membershipError } = await supabaseAdmin
-      .from("users")
+      .from("app_users")
       .select("id")
       .eq("tenant_id", tenantId)
       .eq("email", email)
       .maybeSingle();
 
     if (membershipError) {
+      if (isTenantMembershipTableMissing(membershipError)) {
+        console.warn("[api/auth/tenant] tenant membership support missing", membershipError);
+        return NextResponse.json(
+          { message: "This account is not permitted to access the selected tenant" },
+          { status: 403 },
+        );
+      }
+
       throw membershipError;
     }
 

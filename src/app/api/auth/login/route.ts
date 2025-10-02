@@ -4,6 +4,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 import { formatValidationErrors, loginSchema } from "@/lib/auth/validation";
 import { loadTenantScopedProfile, loadTenantSummary, type TenantSummary } from "@/lib/auth/tenant-context";
+import { isTenantMembershipTableMissing } from "@/lib/auth/memberships";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Database } from "@/db/types";
 
@@ -74,13 +75,27 @@ export async function POST(request: Request) {
   if (profile.tenant_id !== tenantId) {
     try {
       const { data: membership, error: membershipError } = await supabaseAdmin
-        .from("users")
+        .from("app_users")
         .select("id")
         .eq("tenant_id", tenantId)
         .eq("email", email.toLowerCase())
         .maybeSingle();
 
       if (membershipError) {
+        if (isTenantMembershipTableMissing(membershipError)) {
+          console.warn("[auth/login] tenant membership support missing", membershipError);
+          await supabase.auth.signOut();
+          return NextResponse.json(
+            {
+              message: "This account is not permitted to access the selected tenant",
+              fieldErrors: {
+                tenantId: "This account is not permitted to access the selected tenant",
+              },
+            },
+            { status: 403 },
+          );
+        }
+
         throw membershipError;
       }
 
@@ -142,28 +157,37 @@ export async function POST(request: Request) {
   let availableTenants: TenantSummary[] = [];
   try {
     const { data: tenantMemberships, error: tenantMembershipsError } = await supabaseAdmin
-      .from("users")
-      .select("tenant_id, tenants:tenant_id (id, name, slug, logo_url, tagline)")
+      .from("app_users")
+      .select("tenant_id")
       .eq("email", email.toLowerCase());
 
     if (tenantMembershipsError) {
-      throw tenantMembershipsError;
-    }
-
-    const mappedTenants = Array.isArray(tenantMemberships)
-      ? tenantMemberships
-          .map((membership) => membership.tenants)
-          .filter((value): value is TenantSummary => Boolean(value))
-      : [];
-
-    const seen = new Set<string>();
-    availableTenants = mappedTenants.filter((item) => {
-      if (seen.has(item.id)) {
-        return false;
+      if (isTenantMembershipTableMissing(tenantMembershipsError)) {
+        console.warn("[auth/login] tenant membership list unavailable", tenantMembershipsError);
+      } else {
+        throw tenantMembershipsError;
       }
-      seen.add(item.id);
-      return true;
-    });
+    } else if (Array.isArray(tenantMemberships)) {
+      const seen = new Set<string>();
+
+      for (const membership of tenantMemberships) {
+        const membershipTenantId = membership?.tenant_id;
+        if (!membershipTenantId || seen.has(membershipTenantId)) {
+          continue;
+        }
+
+        seen.add(membershipTenantId);
+
+        try {
+          const summary = await loadTenantSummary(supabaseAdmin, membershipTenantId);
+          if (summary) {
+            availableTenants.push(summary);
+          }
+        } catch (summaryError) {
+          console.error("[auth/login] load tenant summary for list failed", summaryError);
+        }
+      }
+    }
   } catch (listError) {
     console.error("[auth/login] load available tenants failed", listError);
   }

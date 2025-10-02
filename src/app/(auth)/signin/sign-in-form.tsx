@@ -25,10 +25,10 @@ type TenantOption = {
 
 type SignInStage = "credentials" | "tenant";
 
-const TENANT_REQUIRED_MESSAGE = "Please choose a tenant to continue";
-const TENANT_FETCH_ERROR_MESSAGE = "Unable to load tenant list, please try again";
-const NO_TENANT_AVAILABLE_MESSAGE = "No tenants are available yet. Please contact an administrator or create one.";
-const CREDENTIALS_INCOMPLETE_MESSAGE = "Please enter both email and password";
+const TENANT_REQUIRED_MESSAGE = "请选择一个学习空间后继续";
+const TENANT_FETCH_ERROR_MESSAGE = "学习空间列表加载失败，请稍后重试";
+const NO_TENANT_AVAILABLE_MESSAGE = "当前还没有可用的学习空间，请联系管理员或创建一个新空间";
+const CREDENTIALS_INCOMPLETE_MESSAGE = "请填写邮箱和密码";
 
 export function SignInForm() {
   const router = useRouter();
@@ -178,10 +178,10 @@ export function SignInForm() {
     if (stage === "credentials") {
       const nextErrors: AuthFieldErrors = {};
       if (!trimmedEmail) {
-        nextErrors.email = "Please enter your email";
+        nextErrors.email = "请填写邮箱";
       }
       if (!password) {
-        nextErrors.password = "Please enter your password";
+        nextErrors.password = "请填写密码";
       }
 
       if (Object.keys(nextErrors).length > 0) {
@@ -245,14 +245,14 @@ export function SignInForm() {
 
         setMessage({
           variant: "success",
-          text: result.payload?.message ?? "Login successful",
+          text: result.payload?.message ?? "登录成功",
         });
         router.replace(redirectTo);
         router.refresh();
       } else {
         setMessage({
           variant: "error",
-          text: result.payload?.message ?? "Login failed, please try again later",
+          text: result.payload?.message ?? "登录失败，请稍后重试",
         });
         setFieldErrors(result.payload?.fieldErrors ?? {});
         if (result.status === 401 || result.status === 400) {
@@ -261,7 +261,7 @@ export function SignInForm() {
       }
     } catch (error) {
       console.error("[signin] submit failed", error);
-      setMessage({ variant: "error", text: "Login failed, please try again later" });
+      setMessage({ variant: "error", text: "登录失败，请稍后重试" });
     } finally {
       setIsSubmitting(false);
     }
@@ -274,14 +274,14 @@ export function SignInForm() {
     <form className="space-y-7" onSubmit={handleSubmit} noValidate>
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm text-slate-200">
-          Email
+          邮箱
         </Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="name@example.com"
+          placeholder="请输入邮箱地址"
           required
           value={credentials.email}
           onChange={handleEmailChange}
@@ -294,14 +294,14 @@ export function SignInForm() {
 
       <div className="space-y-2">
         <Label htmlFor="password" className="text-sm text-slate-200">
-          Password
+          密码
         </Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
-          placeholder="At least 8 characters"
+          placeholder="至少 8 个字符"
           required
           value={credentials.password}
           onChange={handlePasswordChange}
@@ -322,10 +322,10 @@ export function SignInForm() {
             onChange={handleRememberChange}
             disabled={isSubmitting || isTenantStage}
           />
-          <span>Remember me</span>
+          <span>记住我</span>
         </label>
         <Link href="/" className="text-violet-200 transition hover:text-white">
-          Forgot password?
+          忘记密码？
         </Link>
       </div>
 
@@ -333,7 +333,7 @@ export function SignInForm() {
         <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="tenantId" className="text-sm text-slate-200">
-              Tenant
+              学习空间
             </Label>
             <select
               id="tenantId"
@@ -345,7 +345,7 @@ export function SignInForm() {
               className="w-full rounded-md border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white shadow-sm transition focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="" disabled>
-                {isLoadingTenants ? "Loading tenants..." : "Select a tenant to sign in"}
+                {isLoadingTenants ? "加载学习空间中…" : "请选择要登录的学习空间"}
               </option>
               {tenantOptions.map((tenant) => (
                 <option key={tenant.id} value={tenant.id}>
@@ -361,7 +361,7 @@ export function SignInForm() {
                   onClick={handleRetryTenants}
                   className="ml-2 text-violet-200 underline-offset-2 hover:underline"
                 >
-                  Retry
+                  重试
                 </button>
               </p>
             )}
@@ -392,7 +392,7 @@ export function SignInForm() {
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white/90">{selectedTenant.name}</p>
                 <p className="truncate text-xs text-white/70">
-                  {selectedTenant.tagline ?? "This tenant has no tagline yet"}
+                  {selectedTenant.tagline ?? "该空间暂未设置简介"}
                 </p>
               </div>
             </div>
@@ -421,7 +421,7 @@ export function SignInForm() {
             disabled={isSubmitting || isLoadingTenants}
             className="sm:w-auto"
           >
-            Back to credentials
+            返回账号信息
           </Button>
         )}
         <Button
@@ -432,17 +432,17 @@ export function SignInForm() {
           }
         >
           {isSubmitting
-            ? (isTenantStage ? "Signing in..." : "Processing...")
+            ? (isTenantStage ? "正在登录…" : "正在处理…")
             : isTenantStage
-              ? "Sign in"
-              : "Next"}
+              ? "登录"
+              : "下一步"}
         </Button>
       </div>
 
       <p className="text-center text-sm text-slate-200/80">
-        No account yet?
+        还没有账号？
         <Link href="/signup" className="ml-2 text-violet-200 transition hover:text-white">
-          Create account
+          立即注册
         </Link>
       </p>
     </form>

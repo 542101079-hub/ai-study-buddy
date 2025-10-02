@@ -1,43 +1,46 @@
+type AppUsersTable = {
+  Row: {
+    id: string;
+    tenant_id: string;
+    email: string;
+    display_name: string | null;
+    hashed_password: string;
+    created_at: string;
+    updated_at: string;
+  };
+  Insert: {
+    id?: string;
+    tenant_id: string;
+    email: string;
+    display_name?: string | null;
+    hashed_password: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  Update: {
+    id?: string;
+    tenant_id?: string;
+    email?: string;
+    display_name?: string | null;
+    hashed_password?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  Relationships: [
+    {
+      foreignKeyName: "users_tenant_id_tenants_id_fk";
+      columns: ["tenant_id"];
+      referencedRelation: "tenants";
+      referencedColumns: ["id"];
+    },
+  ];
+};
+
 export type Database = {
   public: {
     Tables: {
-      users: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          email: string;
-          display_name: string | null;
-          hashed_password: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          tenant_id: string;
-          email: string;
-          display_name?: string | null;
-          hashed_password: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          tenant_id?: string;
-          email?: string;
-          display_name?: string | null;
-          hashed_password?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "users_tenant_id_tenants_id_fk";
-            columns: ["tenant_id"];
-            referencedRelation: "tenants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+      app_users: AppUsersTable;
+      users: AppUsersTable;
       tenants: {
         Row: {
           id: string;
