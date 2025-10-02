@@ -87,7 +87,7 @@ export const profiles = pgTable(
     role: varchar("role", { length: 16 })
       .notNull()
       .default("user")
-      .$type<"user" | "admin">(),
+      .$type<"user" | "admin" | "editor" | "viewer">(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -106,7 +106,7 @@ export const profiles = pgTable(
       usernameLengthMin: check("profiles_username_length_min", sql`char_length(${table.username}) >= 3`),
       usernameUnique: uniqueIndex("profiles_username_unique").on(table.tenantId, table.username),
       tenantIdIdx: index("profiles_tenant_id_idx").on(table.tenantId),
-      roleAllowed: check("profiles_role_allowed", sql`${table.role} in ('user', 'admin')`),
+      roleAllowed: check("profiles_role_allowed", sql`${table.role} in ('user', 'admin', 'editor', 'viewer')`),
       profilesSelectOwn: pgPolicy("profiles_select_own", {
         for: "select",
         to: "authenticated",

@@ -1,9 +1,9 @@
 
 import { NextResponse } from "next/server";
 
-import { withAdminRoute } from "@/lib/auth/permissions";
+import { withAdminRoute, canManageUser, canChangeRole } from "@/lib/auth/permissions";
 
-const ALLOWED_ROLES = new Set(["admin", "user"] as const);
+const ALLOWED_ROLES = new Set(["admin", "editor", "user", "viewer"] as const);
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +64,18 @@ export const PATCH = withAdminRoute(
 
     if (!target || target.tenant_id !== profile.tenant_id) {
       return NextResponse.json({ message: "Member not found" }, { status: 404 });
+    }
+
+    // 检查是否有权限管理此用户
+    if (!canManageUser(profile.role, target.role)) {
+      return NextResponse.json({ message: "Insufficient permissions to manage this user" }, { status: 403 });
+    }
+
+    // 如果要更改角色，检查是否有权限
+    if (role !== undefined && role !== target.role) {
+      if (!canChangeRole(profile.role, target.role, role as any)) {
+        return NextResponse.json({ message: "Insufficient permissions to change role" }, { status: 403 });
+      }
     }
 
     const { data: updated, error: updateError } = await supabase

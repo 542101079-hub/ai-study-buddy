@@ -2,12 +2,23 @@
 
 import { ChangeEvent, FormEvent, useState, useTransition } from "react";
 
+import { 
+  getUserPermissions, 
+  hasPermission, 
+  canManageUser, 
+  canChangeRole, 
+  getRoleDisplayName, 
+  getRoleDescription,
+  getAssignableRoles,
+  type UserRole 
+} from "@/lib/auth/permissions";
+
 type Member = {
   id: string;
   username: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: "admin" | "user";
+  role: UserRole;
 };
 
 type EditableMember = Member & {
@@ -18,6 +29,7 @@ type EditableMember = Member & {
 type Props = {
   initialMembers: Member[];
   currentUserId: string;
+  currentUserRole: UserRole;
 };
 
 type FieldErrors = Partial<Record<"name" | "email" | "password" | "username" | "avatarUrl", string>>;
@@ -193,7 +205,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
   );
 }
 
-export function MemberManager({ initialMembers, currentUserId }: Props) {
+export function MemberManager({ initialMembers, currentUserId, currentUserRole }: Props) {
     const [members, setMembers] = useState<EditableMember[]>(() => initialMembers.map(toEditableMember));
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -293,6 +305,17 @@ export function MemberManager({ initialMembers, currentUserId }: Props) {
                     {isSelf && <span className="ml-2 text-xs text-emerald-300">(you)</span>}
                   </p>
                   <p className="text-xs text-white/60">@{member.username}</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      member.role === 'admin' ? 'bg-red-500/20 text-red-300' :
+                      member.role === 'editor' ? 'bg-blue-500/20 text-blue-300' :
+                      member.role === 'user' ? 'bg-green-500/20 text-green-300' :
+                      'bg-gray-500/20 text-gray-300'
+                    }`}>
+                      {getRoleDisplayName(member.role)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/50">{getRoleDescription(member.role)}</p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <label className="flex flex-col text-xs text-white/60">
@@ -317,10 +340,14 @@ export function MemberManager({ initialMembers, currentUserId }: Props) {
                         })
                       }
                       className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-                      disabled={isSelf || isPending}
+                      disabled={isSelf || isPending || !canManageUser(currentUserRole, member.role)}
+                      title={!canManageUser(currentUserRole, member.role) ? "您没有权限修改此用户的角色" : ""}
                     >
-                      <option value="admin">Administrator</option>
-                      <option value="user">Member</option>
+                      {getAssignableRoles(currentUserRole).map((role) => (
+                        <option key={role} value={role}>
+                          {getRoleDisplayName(role)}
+                        </option>
+                      ))}
                     </select>
                   </label>
                   <button
