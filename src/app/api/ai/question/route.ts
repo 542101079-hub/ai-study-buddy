@@ -38,6 +38,10 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // 调试信息
+      console.log('AI Question API - QIANWEN_API_KEY exists:', !!process.env.QIANWEN_API_KEY);
+      console.log('AI Question API - Available providers:', aiService.getAvailableProviders());
+      
       // 调用AI服务回答问题
       const answer = await aiService.answerQuestion(question, context);
 

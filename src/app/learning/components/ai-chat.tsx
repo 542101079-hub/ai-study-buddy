@@ -64,16 +64,27 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('AI API Error:', response.status, errorData);
+        
+        // 添加错误消息到聊天
+        const errorMessage: ChatMessage = {
+          role: 'assistant',
+          content: '抱歉，我现在遇到了一些技术问题，请稍后再试。如果问题持续存在，请联系管理员。',
+          timestamp: new Date(),
+          isAIUnavailable: true
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        return;
       }
 
       const data = await response.json();
       
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: data.answer.answer,
+        content: data.answer?.answer || data.response || '收到了您的消息，但回复内容为空。',
         timestamp: new Date(),
-        isAIUnavailable: data.isAIUnavailable
+        isAIUnavailable: false
       };
 
       setMessages(prev => [...prev, assistantMessage]);
