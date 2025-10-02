@@ -97,7 +97,7 @@ export default async function DashboardPage() {
 
   if (profileData?.tenant_id) {
     try {
-      tenantSummary = await loadTenantSummary(supabase, profileData.tenant_id);
+      tenantSummary = await loadTenantSummary(supabaseAdmin, profileData.tenant_id);
     } catch (tenantError) {
       console.error("[dashboard] load tenant failed", tenantError);
     }
@@ -166,16 +166,16 @@ export default async function DashboardPage() {
 
         <main className="flex flex-1 flex-col gap-12 pb-12">
           {showProfileWarning && (
-            <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-6 text-amber-200">
-              <h3 className="text-lg font-semibold mb-2">欢迎使用 AI 学习伙伴！</h3>
+            <div className="rounded-xl border border-blue-500/50 bg-blue-500/10 p-6 text-blue-200">
+              <h3 className="text-lg font-semibold mb-2">欢迎使用 AI 学习伙伴！🎉</h3>
               <p className="mb-4">
-                我们检测到您还没有完整的学习档案。您可以继续使用基本功能，或者创建完整档案来解锁更多功能。
+                您可以直接开始使用所有功能，包括 AI 学习搭子、智能问答和个性化学习计划。
               </p>
               <Button
                 asChild
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                <Link href="/create-profile">创建完整档案</Link>
+                <Link href="/learning">开始学习之旅</Link>
               </Button>
             </div>
           )}
@@ -251,6 +251,34 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
           </section>
+
+          {/* AI 学习搭子模块 */}
+          <Card className="border-violet-600/50 bg-gradient-to-br from-violet-900/70 via-purple-800/60 to-slate-900/80 text-white backdrop-blur-xl">
+            <CardHeader className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                  🤖 AI学习搭子
+                </CardTitle>
+                <CardDescription className="text-sm text-white/85">
+                  个性化学习规划、智能问答、进度追踪，让AI成为你的学习伙伴。
+                </CardDescription>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="border-violet-500/60 text-violet-200 hover:bg-violet-500/20"
+              >
+                <Link href="/learning">开始学习</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-white/85">
+              <p>
+                🎯 制定个性化学习计划，📚 智能答疑解惑，📈 实时追踪学习进度
+              </p>
+              <p>让AI陪伴你的每一步学习之路，提升学习效率和成果。</p>
+            </CardContent>
+          </Card>
 
           {isAdmin && (
             <Card className="border-emerald-600/50 bg-gradient-to-br from-emerald-900/70 via-emerald-800/60 to-slate-900/80 text-white backdrop-blur-xl">
