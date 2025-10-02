@@ -111,7 +111,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
   ];
 
   return (
-    <div className={`flex flex-col bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur ${className}`}>
+    <div className={`flex flex-col bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur shadow-lg ${className}`}>
       {/* 聊天头部 */}
       <div className="flex items-center gap-3 p-4 border-b border-white/10">
         <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -138,7 +138,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
       </div>
 
       {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96 min-h-[300px]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ minHeight: '300px', maxHeight: 'calc(100% - 140px)' }}>
         {messages.map((message, index) => (
           <div
             key={index}
@@ -199,7 +199,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
       )}
 
       {/* 输入框 */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-white/10">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-white/10 relative z-10">
         <div className="flex gap-2">
           <Input
             ref={inputRef}

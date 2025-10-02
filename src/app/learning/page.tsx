@@ -59,7 +59,7 @@ export default async function LearningPage() {
         </div>
 
         {/* 主要内容区域 */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-screen">
           {/* 左侧：学习仪表板 */}
           <div className="xl:col-span-2 space-y-6">
             <LearningDashboard />
@@ -71,9 +71,9 @@ export default async function LearningPage() {
           </div>
 
           {/* 右侧：AI助手和计划生成 */}
-          <div className="space-y-6">
+          <div className="xl:sticky xl:top-4 xl:h-fit space-y-6">
             {/* AI聊天助手 */}
-            <AIChatComponent className="h-96" />
+            <AIChatComponent className="h-[400px] xl:h-[500px]" />
             
             {/* AI计划生成器 */}
             <PlanGeneratorComponent 

@@ -1,7 +1,6 @@
 // 学习计划生成 API 路由
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { getServerSession } from '@supabase/auth-helpers-nextjs';
+import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
 import { aiService } from '@/lib/ai/ai-service';
 
 // 学习计划生成器类

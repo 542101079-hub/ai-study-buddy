@@ -1,7 +1,6 @@
 // 学习统计 API 路由
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { getServerSession } from '@supabase/auth-helpers-nextjs';
+import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
