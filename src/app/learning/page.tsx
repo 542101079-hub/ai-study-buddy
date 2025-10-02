@@ -27,24 +27,55 @@ export default async function LearningPage() {
     .eq('user_id', session.user.id)
     .single();
 
-  // 如果没有档案，使用默认值继续运行，不强制重定向
-  const defaultTenantId = '00000000-0000-0000-0000-000000000000';
-  const userProfile = profileData || {
-    display_name: session.user.email?.split('@')[0] || '学习者',
-    tenant_id: defaultTenantId,
-    tenants: {
-      id: defaultTenantId,
-      name: 'AI 学习伙伴',
-      slug: 'ai-study-buddy'
+  // 如果没有档案，需要获取或创建一个默认租户
+  let userProfile = profileData;
+  
+  if (!profileData) {
+    // 查找或创建默认租户
+    let { data: defaultTenant } = await supabaseAdmin
+      .from('tenants')
+      .select('id, name, slug')
+      .eq('slug', 'ai-study-buddy')
+      .single();
+    
+    if (!defaultTenant) {
+      // 创建默认租户
+      const { data: newTenant } = await supabaseAdmin
+        .from('tenants')
+        .insert({
+          name: 'AI 学习伙伴',
+          slug: 'ai-study-buddy'
+        })
+        .select('id, name, slug')
+        .single();
+      
+      defaultTenant = newTenant;
     }
-  };
+    
+    userProfile = {
+      display_name: session.user.email?.split('@')[0] || '学习者',
+      tenant_id: defaultTenant?.id || null,
+      tenants: defaultTenant || {
+        id: null,
+        name: 'AI 学习伙伴',
+        slug: 'ai-study-buddy'
+      }
+    };
+  }
 
-  // 获取用户的学习目标
-  const { data: goals } = await supabaseAdmin
-    .from('learning_goals')
-    .select('*')
-    .eq('user_id', session.user.id)
-    .order('created_at', { ascending: false });
+  // 获取用户的学习目标（只有在有有效租户ID时）
+  let goals = [];
+  if (userProfile?.tenant_id) {
+    const { data: goalsData } = await supabaseAdmin
+      .from('learning_goals')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('tenant_id', userProfile.tenant_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    goals = goalsData || [];
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">

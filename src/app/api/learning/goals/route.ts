@@ -97,9 +97,23 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!uuidRegex.test(tenant_id)) {
+    if (!tenant_id || !uuidRegex.test(tenant_id)) {
       return NextResponse.json(
         { error: 'Invalid tenant ID format' },
+        { status: 400 }
+      );
+    }
+
+    // 验证租户是否存在
+    const { data: tenantExists } = await supabaseAdmin
+      .from('tenants')
+      .select('id')
+      .eq('id', tenant_id)
+      .single();
+    
+    if (!tenantExists) {
+      return NextResponse.json(
+        { error: 'Tenant does not exist', code: 'TENANT_NOT_FOUND' },
         { status: 400 }
       );
     }
