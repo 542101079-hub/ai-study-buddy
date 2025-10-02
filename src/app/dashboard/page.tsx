@@ -72,18 +72,23 @@ export default async function DashboardPage() {
       tenant_id: string | null;
     }>();
 
+  // 检查profile数据，但不强制重定向
   if (profileError) {
-    console.error("[dashboard] load profile failed", profileError);
-    // 如果profile不存在，重定向到tenant选择页面
-    if (profileError.code === 'PGRST116' || !profileData) {
-      redirect("/tenant-select");
-    }
+    console.warn("[dashboard] load profile failed", {
+      error: profileError,
+      errorCode: profileError?.code,
+      errorMessage: profileError?.message,
+      errorDetails: JSON.stringify(profileError),
+      userId: session.user.id,
+      userEmail: session.user.email
+    });
   }
 
-  // 如果没有错误但也没有profile数据，同样重定向
   if (!profileData) {
-    console.warn("[dashboard] profile data is null, redirecting to tenant selection");
-    redirect("/tenant-select");
+    console.warn("[dashboard] profile data is null", {
+      userId: session.user.id,
+      userEmail: session.user.email
+    });
   }
 
   let tenantSummary: TenantSummary | null = null;
@@ -107,6 +112,9 @@ export default async function DashboardPage() {
 
   const isAdmin = profileData?.role === "admin";
   const roleLabel = isAdmin ? "管理员" : "成员";
+
+  // 如果没有profile数据，显示提示信息
+  const showProfileWarning = !profileData;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -155,6 +163,20 @@ export default async function DashboardPage() {
         </header>
 
         <main className="flex flex-1 flex-col gap-12 pb-12">
+          {showProfileWarning && (
+            <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-6 text-amber-200">
+              <h3 className="text-lg font-semibold mb-2">欢迎使用 AI 学习伙伴！</h3>
+              <p className="mb-4">
+                我们检测到您还没有完整的学习档案。您可以继续使用基本功能，或者创建完整档案来解锁更多功能。
+              </p>
+              <Button
+                asChild
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                <Link href="/create-profile">创建完整档案</Link>
+              </Button>
+            </div>
+          )}
           <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {HIGHLIGHTS.map((item) => (
               <Card

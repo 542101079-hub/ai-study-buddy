@@ -19,13 +19,25 @@ export default async function TenantSelectPage() {
   try {
     profile = await loadTenantScopedProfile(supabase, session.user.id);
   } catch (error) {
-    console.error("[tenant-select] load profile failed", error);
-    redirect("/signup");
+    console.warn("[tenant-select] load profile failed", {
+      error: error,
+      errorCode: error?.code,
+      errorMessage: error?.message,
+      errorDetails: JSON.stringify(error),
+      userId: session.user.id,
+      userEmail: session.user.email
+    });
+    // 不强制重定向，而是重定向到dashboard
+    redirect("/dashboard");
   }
 
   if (!profile) {
-    // 用户没有profile，重定向到注册页面
-    redirect("/signup");
+    // 用户没有profile，重定向到dashboard而不是create-profile
+    console.warn("[tenant-select] profile data is null, redirecting to dashboard", {
+      userId: session.user.id,
+      userEmail: session.user.email
+    });
+    redirect("/dashboard");
   }
 
   if (profile.role !== "admin") {
