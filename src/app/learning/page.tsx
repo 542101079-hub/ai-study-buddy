@@ -4,6 +4,7 @@ import { LearningDashboard } from './components/learning-dashboard';
 import { GoalManager } from './components/goal-manager';
 import { AIChatComponent } from './components/ai-chat';
 import { PlanGeneratorComponent } from './components/plan-generator';
+import { QuickFix } from './components/quick-fix';
 
 export default async function LearningPage() {
   const session = await getServerSession();
@@ -27,11 +28,12 @@ export default async function LearningPage() {
     .single();
 
   // 如果没有档案，使用默认值继续运行，不强制重定向
+  const defaultTenantId = '00000000-0000-0000-0000-000000000000';
   const userProfile = profileData || {
     display_name: session.user.email?.split('@')[0] || '学习者',
-    tenant_id: 'default',
+    tenant_id: defaultTenantId,
     tenants: {
-      id: 'default',
+      id: defaultTenantId,
       name: 'AI 学习伙伴',
       slug: 'ai-study-buddy'
     }
@@ -96,6 +98,9 @@ export default async function LearningPage() {
           </div>
         </div>
       </div>
+      
+      {/* 快速修复组件 */}
+      <QuickFix />
     </div>
   );
 }

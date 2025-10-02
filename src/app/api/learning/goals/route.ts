@@ -89,27 +89,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 验证UUID格式
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(session.user.id)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+    if (!uuidRegex.test(tenant_id)) {
+      return NextResponse.json(
+        { error: 'Invalid tenant ID format' },
+        { status: 400 }
+      );
+    }
+
     // 创建学习目标
+    const goalData = {
+      user_id: session.user.id,
+      tenant_id: tenant_id,
+      title: title.trim(),
+      description: description ? description.trim() : null,
+      type: type,
+      current_level: parseInt(current_level) || 1,
+      target_level: parseInt(target_level) || 10,
+      target_date: target_date ? new Date(target_date).toISOString() : null,
+      status: 'active'
+    };
+
+    console.log('Creating goal with data:', goalData);
+
     const { data: goal, error } = await supabaseAdmin
       .from('learning_goals')
-      .insert({
-        user_id: session.user.id,
-        tenant_id,
-        title,
-        description: description || null,
-        type,
-        current_level: current_level || 1,
-        target_level: target_level || 10,
-        target_date: target_date ? new Date(target_date).toISOString() : null,
-        status: 'active'
-      })
+      .insert(goalData)
       .select()
       .single();
 
     if (error) {
       console.error('Failed to create learning goal:', error);
+      
+      // 提供更详细的错误信息
+      let errorMessage = 'Failed to create learning goal';
+      if (error.code === 'PGRST116') {
+        errorMessage = 'Database table does not exist. Please run database migrations.';
+      } else if (error.code === 'PGRST205') {
+        errorMessage = 'Database schema cache issue. The learning_goals table may not exist.';
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to create learning goal' },
+        { 
+          error: errorMessage,
+          details: error.message,
+          code: error.code 
+        },
         { status: 500 }
       );
     }

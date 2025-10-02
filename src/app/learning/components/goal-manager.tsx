@@ -93,7 +93,8 @@ export function GoalManager({ tenantId }: Props) {
         setShowCreateForm(false);
       } else {
         const errorData = await response.json();
-        alert(errorData.error || '创建目标失败');
+        console.error('API Error Response:', errorData);
+        alert(`创建目标失败: ${errorData.error || '未知错误'}\n\n详细信息: ${errorData.details || '无'}\n错误代码: ${errorData.code || '无'}`);
       }
     } catch (error) {
       console.error('Failed to create goal:', error);
@@ -268,6 +269,7 @@ export function GoalManager({ tenantId }: Props) {
           <div className="text-4xl mb-3">🎯</div>
           <p className="text-white/60">还没有学习目标</p>
           <p className="text-white/40 text-sm mt-1">创建你的第一个学习目标开始学习之旅</p>
+          
         </div>
       ) : (
         <div className="space-y-4">

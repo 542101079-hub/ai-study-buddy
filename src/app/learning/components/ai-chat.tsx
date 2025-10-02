@@ -52,14 +52,16 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/ai/question', {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          question: userMessage.content,
-          goalId: goalId || null
+          messages: [
+            ...messages.slice(-5), // 保留最近5条消息作为上下文
+            userMessage
+          ]
         }),
       });
 
