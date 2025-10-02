@@ -122,9 +122,9 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
   ];
 
   return (
-    <div className={`flex flex-col bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 backdrop-blur shadow-2xl relative z-10 ${className}`}>
+    <div className={`flex flex-col bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 backdrop-blur shadow-2xl relative z-10 overflow-hidden ${className}`}>
       {/* 聊天头部 */}
-      <div className="flex items-center gap-3 p-4 border-b border-violet-500/20 bg-gradient-to-r from-violet-600/20 to-purple-600/20">
+      <div className="flex items-center gap-3 p-3 border-b border-violet-500/20 bg-gradient-to-r from-violet-600/20 to-purple-600/20">
         <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
           <span className="text-white text-sm font-bold">🤖</span>
         </div>
@@ -149,7 +149,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
       </div>
 
       {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ minHeight: '300px', maxHeight: 'calc(100% - 140px)' }}>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -187,8 +187,8 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
               <div className="flex items-center gap-3">
                 <div className="flex space-x-1">
                   <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
                 </div>
                 <span className="text-slate-200 text-sm">AI正在思考中...</span>
               </div>
@@ -200,7 +200,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
 
       {/* 快捷问题 */}
       {messages.length <= 1 && (
-        <div className="px-4 pb-3">
+        <div className="px-3 pb-2">
           <p className="text-violet-200/70 text-sm mb-3 font-medium">💡 快速开始：</p>
           <div className="flex flex-wrap gap-2">
             {quickQuestions.map((question, index) => (
@@ -217,7 +217,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
       )}
 
       {/* 输入框 */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-violet-500/20 bg-gradient-to-r from-slate-800/50 to-slate-900/50 relative z-20">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-violet-500/20 bg-gradient-to-r from-slate-800/50 to-slate-900/50 relative z-20">
         <div className="flex gap-3">
           <Input
             ref={inputRef}
@@ -225,7 +225,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="有什么学习问题想问我吗？"
             disabled={isLoading}
-            className="flex-1 bg-slate-700/50 border-violet-400/30 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 rounded-lg relative z-30"
+            className="flex-1 bg-slate-600/70 border-violet-400/40 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 rounded-lg shadow-sm relative z-30"
             maxLength={500}
           />
           <Button
@@ -240,7 +240,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
             )}
           </Button>
         </div>
-        <p className="text-xs text-violet-200/50 mt-2">
+        <p className="text-xs text-violet-300/70 mt-2">
           {input.length}/500 字符
         </p>
       </form>

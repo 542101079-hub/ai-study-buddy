@@ -161,7 +161,7 @@ export function LearningDashboard() {
   return (
     <div className="space-y-6">
       {/* 标题 */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-slate-800/50 to-slate-900/50 rounded-xl p-4 border border-violet-500/20">
+      <div className="flex items-center justify-between bg-gradient-to-r from-slate-800/50 to-slate-900/50 rounded-xl p-3 border border-violet-500/20">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-white">📚 学习仪表板</h2>
           <span className="text-sm font-normal text-violet-200/70 bg-violet-500/20 px-3 py-1 rounded-full">实时数据</span>

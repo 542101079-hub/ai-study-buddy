@@ -152,8 +152,8 @@ export function GoalManager({ tenantId }: Props) {
   }
 
   return (
-    <div className="bg-slate-900/60 rounded-xl border border-white/10 p-6 backdrop-blur">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-slate-900/60 rounded-xl border border-white/10 p-4 backdrop-blur">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium text-white">🎯 学习目标</h3>
         <Button
           onClick={() => setShowCreateForm(true)}
@@ -165,7 +165,7 @@ export function GoalManager({ tenantId }: Props) {
 
       {/* 创建目标表单 */}
       {showCreateForm && (
-        <div className="mb-6 p-4 border border-white/20 rounded-lg bg-white/5">
+        <div className="mb-4 p-4 border border-white/20 rounded-lg bg-white/5">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -174,7 +174,7 @@ export function GoalManager({ tenantId }: Props) {
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="例如：掌握 React 开发"
-                  className="bg-slate-700/50 border-violet-400/30 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
+                  className="bg-slate-600/70 border-violet-400/40 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
                   required
                 />
               </div>
@@ -184,7 +184,7 @@ export function GoalManager({ tenantId }: Props) {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
-                  className="w-full rounded-md border border-violet-400/30 bg-slate-700/50 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
+                  className="w-full rounded-md border border-violet-400/40 bg-slate-600/70 px-3 py-2 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
                   title="选择目标类型"
                 >
                   <option value="skill">技能提升</option>
@@ -200,7 +200,7 @@ export function GoalManager({ tenantId }: Props) {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="详细描述你的学习目标..."
-                className="w-full rounded-md border border-violet-400/30 bg-slate-700/50 px-3 py-2 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 resize-none"
+                className="w-full rounded-md border border-violet-400/40 bg-slate-600/70 px-3 py-2 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 resize-none shadow-sm"
                 rows={3}
               />
             </div>
@@ -214,7 +214,7 @@ export function GoalManager({ tenantId }: Props) {
                   max="10"
                   value={formData.current_level}
                   onChange={(e) => setFormData(prev => ({ ...prev, current_level: parseInt(e.target.value) || 1 }))}
-                  className="bg-slate-700/50 border-violet-400/30 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
+                  className="bg-slate-600/70 border-violet-400/40 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
                 />
               </div>
               
@@ -226,7 +226,7 @@ export function GoalManager({ tenantId }: Props) {
                   max="10"
                   value={formData.target_level}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_level: parseInt(e.target.value) || 10 }))}
-                  className="bg-slate-700/50 border-violet-400/30 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
+                  className="bg-slate-600/70 border-violet-400/40 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
                 />
               </div>
               
@@ -236,7 +236,7 @@ export function GoalManager({ tenantId }: Props) {
                   type="date"
                   value={formData.target_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
-                  className="bg-slate-700/50 border-violet-400/30 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
+                  className="bg-slate-600/70 border-violet-400/40 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
                 />
               </div>
             </div>
@@ -332,10 +332,8 @@ export function GoalManager({ tenantId }: Props) {
                 <div className="w-full bg-white/10 rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-violet-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.round(((goal.current_level - 1) / (goal.target_level - 1)) * 100)}%`
-                    }}
-                  ></div>
+                    style={{ width: `${Math.round(((goal.current_level - 1) / (goal.target_level - 1)) * 100)}%` }}
+                  />
                 </div>
               </div>
             </div>

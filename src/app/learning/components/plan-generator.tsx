@@ -135,7 +135,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
   };
 
   return (
-    <div className={`bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 p-6 backdrop-blur shadow-2xl ${className}`}>
+    <div className={`bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 p-4 backdrop-blur shadow-2xl ${className}`}>
       <h3 className="text-lg font-medium text-white mb-4">🎯 AI智能学习计划生成</h3>
       
       <div className="space-y-4">
@@ -149,7 +149,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
               setError(null);
               setGeneratedPlan(null);
             }}
-            className="w-full mt-2 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
+            className="w-full mt-2 rounded-md border border-violet-400/40 bg-slate-600/70 px-3 py-2 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
             title="选择学习目标"
           >
             <option value="">请选择一个学习目标</option>
@@ -184,7 +184,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 ...prev,
                 daily_time_minutes: parseInt(e.target.value) || 60
               }))}
-              className="mt-1 bg-slate-700/70 border-violet-400/40 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
+              className="mt-1 bg-slate-600/70 border-violet-400/40 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               min="15"
               max="480"
             />
@@ -200,7 +200,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 ...prev,
                 weekly_goal: parseInt(e.target.value) || 5
               }))}
-              className="mt-1 bg-slate-700/70 border-violet-400/40 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
+              className="mt-1 bg-slate-600/70 border-violet-400/40 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               min="1"
               max="7"
             />
@@ -217,7 +217,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 ...prev,
                 difficulty_level: parseInt(e.target.value)
               }))}
-              className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
+              className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-600/70 px-3 py-2 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               title="选择难度偏好"
             >
               <option value={1}>很简单</option>
@@ -237,7 +237,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 ...prev,
                 preferred_time: e.target.value
               }))}
-              className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
+              className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-600/70 px-3 py-2 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               title="选择偏好学习时间"
             >
               <option value="morning">早上</option>

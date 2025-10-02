@@ -59,9 +59,9 @@ export default async function LearningPage() {
         </div>
 
         {/* 主要内容区域 */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-screen">
-          {/* 左侧：学习仪表板 */}
-          <div className="xl:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 min-h-0">
+          {/* 左侧：学习仪表板和目标管理 */}
+          <div className="lg:col-span-3 space-y-6">
             <LearningDashboard />
             
             {/* 学习目标管理 */}
@@ -71,13 +71,14 @@ export default async function LearningPage() {
           </div>
 
           {/* 右侧：AI助手和计划生成 */}
-          <div className="space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* AI聊天助手 */}
-            <AIChatComponent className="h-[500px]" />
+            <AIChatComponent className="h-[380px] flex-shrink-0" />
             
             {/* AI计划生成器 */}
             <PlanGeneratorComponent 
               goals={goals || []}
+              className="flex-shrink-0"
             />
           </div>
         </div>
