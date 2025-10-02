@@ -338,6 +338,7 @@ export function SignInForm() {
             <select
               id="tenantId"
               name="tenantId"
+              title="选择学习空间"
               value={selectedTenantId}
               onChange={handleTenantChange}
               disabled={isSubmitting || isLoadingTenants || tenantOptions.length === 0}
