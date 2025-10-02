@@ -174,7 +174,7 @@ export function GoalManager({ tenantId }: Props) {
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="例如：掌握 React 开发"
-                  className="bg-slate-800/60 border-white/20 text-white"
+                  className="bg-slate-700/50 border-violet-400/30 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
                   required
                 />
               </div>
@@ -184,7 +184,7 @@ export function GoalManager({ tenantId }: Props) {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
-                  className="w-full rounded-md border border-white/20 bg-slate-800/60 px-3 py-2 text-white"
+                  className="w-full rounded-md border border-violet-400/30 bg-slate-700/50 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
                   title="选择目标类型"
                 >
                   <option value="skill">技能提升</option>
@@ -200,7 +200,7 @@ export function GoalManager({ tenantId }: Props) {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="详细描述你的学习目标..."
-                className="w-full rounded-md border border-white/20 bg-slate-800/60 px-3 py-2 text-white resize-none"
+                className="w-full rounded-md border border-violet-400/30 bg-slate-700/50 px-3 py-2 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 resize-none"
                 rows={3}
               />
             </div>
@@ -214,7 +214,7 @@ export function GoalManager({ tenantId }: Props) {
                   max="10"
                   value={formData.current_level}
                   onChange={(e) => setFormData(prev => ({ ...prev, current_level: parseInt(e.target.value) || 1 }))}
-                  className="bg-slate-800/60 border-white/20 text-white"
+                  className="bg-slate-700/50 border-violet-400/30 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
                 />
               </div>
               
@@ -226,7 +226,7 @@ export function GoalManager({ tenantId }: Props) {
                   max="10"
                   value={formData.target_level}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_level: parseInt(e.target.value) || 10 }))}
-                  className="bg-slate-800/60 border-white/20 text-white"
+                  className="bg-slate-700/50 border-violet-400/30 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
                 />
               </div>
               
@@ -236,7 +236,7 @@ export function GoalManager({ tenantId }: Props) {
                   type="date"
                   value={formData.target_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
-                  className="bg-slate-800/60 border-white/20 text-white"
+                  className="bg-slate-700/50 border-violet-400/30 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
                 />
               </div>
             </div>

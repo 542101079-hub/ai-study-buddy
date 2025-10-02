@@ -302,7 +302,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                 <div className="space-y-1">
                   <p className="text-base font-semibold text-white">
                     {member.full_name || member.username}
-                    {isSelf && <span className="ml-2 text-xs text-emerald-300">(you)</span>}
+                    {isSelf && <span className="ml-2 text-xs text-emerald-300">(您)</span>}
                   </p>
                   <p className="text-xs text-white/60">@{member.username}</p>
                   <div className="flex items-center gap-2">

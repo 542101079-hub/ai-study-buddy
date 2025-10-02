@@ -135,13 +135,13 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
   };
 
   return (
-    <div className={`bg-slate-900/60 rounded-xl border border-white/10 p-6 backdrop-blur ${className}`}>
+    <div className={`bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 p-6 backdrop-blur shadow-2xl ${className}`}>
       <h3 className="text-lg font-medium text-white mb-4">🎯 AI智能学习计划生成</h3>
       
       <div className="space-y-4">
         {/* 选择学习目标 */}
         <div>
-          <Label className="text-white/90">选择学习目标 *</Label>
+          <Label className="text-violet-200/90 font-medium">选择学习目标 *</Label>
           <select
             value={selectedGoalId}
             onChange={(e) => {
@@ -149,7 +149,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
               setError(null);
               setGeneratedPlan(null);
             }}
-            className="w-full mt-1 rounded-md border border-white/20 bg-slate-800/60 px-3 py-2 text-white"
+            className="w-full mt-2 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
             title="选择学习目标"
           >
             <option value="">请选择一个学习目标</option>
@@ -160,9 +160,9 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
             ))}
           </select>
           {selectedGoal && (
-            <div className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10">
-              <p className="text-white/70 text-sm">{selectedGoal.description}</p>
-              <div className="flex items-center gap-4 mt-2 text-xs text-white/50">
+            <div className="mt-3 p-3 bg-violet-500/10 rounded-lg border border-violet-400/20">
+              <p className="text-violet-100/90 text-sm">{selectedGoal.description}</p>
+              <div className="flex items-center gap-4 mt-2 text-xs text-violet-200/70">
                 <span>📊 当前水平: {selectedGoal.current_level}/10</span>
                 <span>🎯 目标水平: {selectedGoal.target_level}/10</span>
                 {selectedGoal.target_date && (
@@ -176,7 +176,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
         {/* 学习偏好设置 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-white/90">每日学习时间（分钟）</Label>
+            <Label className="text-violet-200/90 font-medium">每日学习时间（分钟）</Label>
             <Input
               type="number"
               value={preferences.daily_time_minutes}
@@ -184,15 +184,15 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 ...prev,
                 daily_time_minutes: parseInt(e.target.value) || 60
               }))}
-              className="bg-slate-800/60 border-white/20 text-white"
+              className="mt-1 bg-slate-700/70 border-violet-400/40 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               min="15"
               max="480"
             />
-            <p className="text-xs text-white/50 mt-1">建议: 30-120分钟</p>
+            <p className="text-xs text-violet-200/60 mt-1">建议: 30-120分钟</p>
           </div>
           
           <div>
-            <Label className="text-white/90">每周学习天数</Label>
+            <Label className="text-violet-200/90 font-medium">每周学习天数</Label>
             <Input
               type="number"
               value={preferences.weekly_goal}
@@ -200,24 +200,24 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 ...prev,
                 weekly_goal: parseInt(e.target.value) || 5
               }))}
-              className="bg-slate-800/60 border-white/20 text-white"
+              className="mt-1 bg-slate-700/70 border-violet-400/40 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               min="1"
               max="7"
             />
-            <p className="text-xs text-white/50 mt-1">建议: 3-6天</p>
+            <p className="text-xs text-violet-200/60 mt-1">建议: 3-6天</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-white/90">难度偏好</Label>
+            <Label className="text-violet-200/90 font-medium">难度偏好</Label>
             <select
               value={preferences.difficulty_level}
               onChange={(e) => setPreferences(prev => ({
                 ...prev,
                 difficulty_level: parseInt(e.target.value)
               }))}
-              className="w-full rounded-md border border-white/20 bg-slate-800/60 px-3 py-2 text-white"
+              className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               title="选择难度偏好"
             >
               <option value={1}>很简单</option>
@@ -226,18 +226,18 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
               <option value={4}>有挑战</option>
               <option value={5}>很有挑战</option>
             </select>
-            <p className="text-xs text-white/50 mt-1">当前: {getDifficultyLabel(preferences.difficulty_level)}</p>
+            <p className="text-xs text-violet-200/60 mt-1">当前: {getDifficultyLabel(preferences.difficulty_level)}</p>
           </div>
           
           <div>
-            <Label className="text-white/90">偏好学习时间</Label>
+            <Label className="text-violet-200/90 font-medium">偏好学习时间</Label>
             <select
               value={preferences.preferred_time}
               onChange={(e) => setPreferences(prev => ({
                 ...prev,
                 preferred_time: e.target.value
               }))}
-              className="w-full rounded-md border border-white/20 bg-slate-800/60 px-3 py-2 text-white"
+              className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
               title="选择偏好学习时间"
             >
               <option value="morning">早上</option>
@@ -245,19 +245,19 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
               <option value="evening">晚上</option>
               <option value="flexible">灵活安排</option>
             </select>
-            <p className="text-xs text-white/50 mt-1">当前: {getTimeLabel(preferences.preferred_time)}</p>
+            <p className="text-xs text-violet-200/60 mt-1">当前: {getTimeLabel(preferences.preferred_time)}</p>
           </div>
         </div>
 
         <div>
-          <Label className="text-white/90">学习风格</Label>
+          <Label className="text-violet-200/90 font-medium">学习风格</Label>
           <select
             value={preferences.learning_style}
             onChange={(e) => setPreferences(prev => ({
               ...prev,
               learning_style: e.target.value
             }))}
-            className="w-full rounded-md border border-white/20 bg-slate-800/60 px-3 py-2 text-white"
+            className="w-full mt-1 rounded-md border border-violet-400/40 bg-slate-700/70 px-3 py-2 text-white focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
             title="选择学习风格"
           >
             <option value="visual">视觉型（图表、图像）</option>
@@ -265,13 +265,13 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
             <option value="kinesthetic">动手型（实践、操作）</option>
             <option value="mixed">混合型</option>
           </select>
-          <p className="text-xs text-white/50 mt-1">当前: {getStyleLabel(preferences.learning_style)}</p>
+          <p className="text-xs text-violet-200/60 mt-1">当前: {getStyleLabel(preferences.learning_style)}</p>
         </div>
 
         {/* 错误信息 */}
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg shadow-sm">
+            <p className="text-red-300 text-sm font-medium">{error}</p>
           </div>
         )}
 
@@ -279,39 +279,39 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
         <Button
           onClick={handleGenerate}
           disabled={!selectedGoalId || isGenerating}
-          className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white py-3"
+          className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white py-3 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
         >
           {isGenerating ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              正在生成个性化学习计划...
+              <span className="text-white">正在生成个性化学习计划...</span>
             </div>
           ) : (
-            '🚀 生成AI学习计划'
+            <span className="text-white">🚀 生成AI学习计划</span>
           )}
         </Button>
 
         {/* 生成的计划预览 */}
         {generatedPlan && (
-          <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <h4 className="text-green-400 font-medium mb-3">✅ 学习计划生成成功！</h4>
+          <div className="mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg shadow-sm">
+            <h4 className="text-green-300 font-medium mb-3">✅ 学习计划生成成功！</h4>
             
             <div className="space-y-3">
               <div>
-                <h5 className="text-white font-medium text-sm mb-1">📋 计划概述</h5>
-                <p className="text-white/70 text-sm">{generatedPlan.plan_overview}</p>
+                <h5 className="text-violet-200 font-medium text-sm mb-1">📋 计划概述</h5>
+                <p className="text-violet-100/80 text-sm">{generatedPlan.plan_overview}</p>
               </div>
 
               <div>
-                <h5 className="text-white font-medium text-sm mb-2">📚 学习阶段 ({generatedPlan.learning_phases.length}个)</h5>
+                <h5 className="text-violet-200 font-medium text-sm mb-2">📚 学习阶段 ({generatedPlan.learning_phases.length}个)</h5>
                 <div className="space-y-2">
                   {generatedPlan.learning_phases.map((phase, index) => (
-                    <div key={index} className="p-2 bg-white/5 rounded border border-white/10">
+                    <div key={index} className="p-2 bg-violet-500/10 rounded border border-violet-400/20">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-white/90 text-sm font-medium">{phase.phase_name}</span>
-                        <span className="text-white/60 text-xs">{phase.duration_weeks}周</span>
+                        <span className="text-violet-100 text-sm font-medium">{phase.phase_name}</span>
+                        <span className="text-violet-200/70 text-xs">{phase.duration_weeks}周</span>
                       </div>
-                      <p className="text-white/60 text-xs">
+                      <p className="text-violet-200/70 text-xs">
                         重点: {phase.focus_areas.join(', ')}
                       </p>
                     </div>
@@ -320,8 +320,8 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
               </div>
 
               <div>
-                <h5 className="text-white font-medium text-sm mb-1">🎯 成功指标</h5>
-                <ul className="text-white/70 text-sm space-y-1">
+                <h5 className="text-violet-200 font-medium text-sm mb-1">🎯 成功指标</h5>
+                <ul className="text-violet-100/80 text-sm space-y-1">
                   {generatedPlan.success_metrics.map((metric, index) => (
                     <li key={index} className="flex items-start gap-2">
                       <span className="text-green-400 mt-0.5">•</span>
@@ -331,8 +331,8 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
                 </ul>
               </div>
 
-              <div className="pt-3 border-t border-white/10">
-                <p className="text-white/50 text-xs">
+              <div className="pt-3 border-t border-violet-400/20">
+                <p className="text-violet-200/60 text-xs">
                   💡 计划已保存到你的学习空间，可以在学习仪表板中查看详细任务安排
                 </p>
               </div>

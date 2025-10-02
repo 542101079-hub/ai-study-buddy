@@ -71,9 +71,9 @@ export default async function LearningPage() {
           </div>
 
           {/* 右侧：AI助手和计划生成 */}
-          <div className="xl:sticky xl:top-4 xl:h-fit space-y-6">
+          <div className="space-y-6">
             {/* AI聊天助手 */}
-            <AIChatComponent className="h-[400px] xl:h-[500px]" />
+            <AIChatComponent className="h-[500px]" />
             
             {/* AI计划生成器 */}
             <PlanGeneratorComponent 

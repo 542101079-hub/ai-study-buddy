@@ -122,15 +122,15 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
   ];
 
   return (
-    <div className={`flex flex-col bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur shadow-lg ${className}`}>
+    <div className={`flex flex-col bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 backdrop-blur shadow-2xl relative z-10 ${className}`}>
       {/* 聊天头部 */}
-      <div className="flex items-center gap-3 p-4 border-b border-white/10">
-        <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm font-semibold">AI</span>
+      <div className="flex items-center gap-3 p-4 border-b border-violet-500/20 bg-gradient-to-r from-violet-600/20 to-purple-600/20">
+        <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-white text-sm font-bold">🤖</span>
         </div>
         <div className="flex-1">
-          <h3 className="text-white font-medium">AI学习搭子</h3>
-          <p className="text-white/60 text-xs">随时为你答疑解惑</p>
+          <h3 className="text-white font-semibold text-lg">AI学习搭子</h3>
+          <p className="text-violet-200/80 text-sm">智能学习助手，随时为你答疑解惑</p>
         </div>
         <Button
           variant="ghost"
@@ -142,9 +142,9 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
               timestamp: new Date()
             }]);
           }}
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-violet-200/70 hover:text-white hover:bg-violet-500/20 border border-violet-400/30 hover:border-violet-300/50 transition-all duration-200 relative z-20 cursor-pointer"
         >
-          🗑️ 清空
+          🗑️ 清空对话
         </Button>
       </div>
 
@@ -156,19 +156,23 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] rounded-lg px-3 py-2 ${
+              className={`max-w-[85%] rounded-lg px-4 py-3 shadow-lg ${
                 message.role === 'user'
-                  ? 'bg-violet-600 text-white'
+                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border border-violet-400/30'
                   : message.isAIUnavailable
-                  ? 'bg-orange-500/20 text-orange-200 border border-orange-500/30'
-                  : 'bg-white/10 text-white/90'
+                  ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-100 border border-orange-400/40'
+                  : 'bg-gradient-to-r from-slate-700/80 to-slate-800/80 text-white border border-slate-600/40'
               }`}
             >
               <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
               <p className={`text-xs mt-2 ${
-                message.role === 'user' ? 'text-violet-200' : 'text-white/50'
+                message.role === 'user' 
+                  ? 'text-violet-100/80' 
+                  : message.isAIUnavailable 
+                  ? 'text-orange-200/70'
+                  : 'text-slate-300/70'
               }`}>
-                {message.timestamp.toLocaleTimeString([], { 
+                {message.timestamp.toLocaleTimeString('zh-CN', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
                 })}
@@ -179,11 +183,14 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-white/10 rounded-lg px-3 py-2">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="bg-gradient-to-r from-slate-700/80 to-slate-800/80 border border-slate-600/40 rounded-lg px-4 py-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+                <span className="text-slate-200 text-sm">AI正在思考中...</span>
               </div>
             </div>
           </div>
@@ -193,14 +200,14 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
 
       {/* 快捷问题 */}
       {messages.length <= 1 && (
-        <div className="px-4 pb-2">
-          <p className="text-white/50 text-xs mb-2">💡 快捷问题：</p>
+        <div className="px-4 pb-3">
+          <p className="text-violet-200/70 text-sm mb-3 font-medium">💡 快速开始：</p>
           <div className="flex flex-wrap gap-2">
             {quickQuestions.map((question, index) => (
               <button
                 key={index}
                 onClick={() => handleQuickQuestion(question)}
-                className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-full transition-all duration-200"
+                className="text-xs px-3 py-2 bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-100 hover:text-white rounded-full border border-violet-400/30 hover:border-violet-300/50 transition-all duration-200 shadow-sm relative z-20 cursor-pointer"
               >
                 {question}
               </button>
@@ -210,21 +217,21 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
       )}
 
       {/* 输入框 */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-white/10 relative z-10">
-        <div className="flex gap-2">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-violet-500/20 bg-gradient-to-r from-slate-800/50 to-slate-900/50 relative z-20">
+        <div className="flex gap-3">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="有什么学习问题想问我吗？"
             disabled={isLoading}
-            className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-violet-400"
+            className="flex-1 bg-slate-700/50 border-violet-400/30 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 rounded-lg relative z-30"
             maxLength={500}
           />
           <Button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="bg-violet-600 hover:bg-violet-700 text-white px-4"
+            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg shadow-lg border border-violet-400/30 transition-all duration-200 relative z-30"
           >
             {isLoading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -233,7 +240,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
             )}
           </Button>
         </div>
-        <p className="text-xs text-white/40 mt-1">
+        <p className="text-xs text-violet-200/50 mt-2">
           {input.length}/500 字符
         </p>
       </form>

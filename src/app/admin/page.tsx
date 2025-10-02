@@ -41,12 +41,12 @@ export default async function AdminPage() {
   return (
     <section className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-12">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">Workspace administration</h1>
+        <h1 className="text-3xl font-semibold text-white">工作空间管理</h1>
         <p className="text-sm text-white/70">
-          {tenant ? `${tenant.name} (${tenant.slug})` : "Current workspace"}
+          {tenant ? `${tenant.name} (${tenant.slug})` : "当前工作空间"}
         </p>
         <p className="text-xs text-white/50">
-          Only administrators can access this page and manage members inside the same tenant.
+          只有管理员可以访问此页面并管理同一租户内的成员。
         </p>
       </header>
       <AdminClient

@@ -4,14 +4,17 @@ import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
 import { aiService } from '@/lib/ai/ai-service';
 
 export async function POST(request: NextRequest) {
+  console.log('🤖 AI Question API called!');
   try {
     const session = await getServerSession();
     if (!session?.user) {
+      console.log('❌ Unauthorized - no session');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
+    console.log('✅ User authenticated:', session.user.email);
 
     const body = await request.json();
     const { question, context, goalId } = body;
@@ -24,48 +27,43 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取用户的租户信息
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('tenant_id')
-      .eq('user_id', session.user.id)
+      .eq('id', session.user.id)  // 修复：应该是 id 而不是 user_id
       .single();
 
+    console.log('Profile query result:', { profile, profileError });
+
     if (!profile) {
+      console.log('❌ User profile not found for user:', session.user.id);
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
       );
     }
 
+    console.log('✅ Profile found:', profile);
+
     try {
       // 调试信息
       console.log('AI Question API - QIANWEN_API_KEY exists:', !!process.env.QIANWEN_API_KEY);
       console.log('AI Question API - Available providers:', aiService.getAvailableProviders());
       
-      // 调用AI服务回答问题
-      const answer = await aiService.answerQuestion(question, context);
+      // 暂时返回一个模拟的AI回答，不调用真实的AI服务
+      const mockAnswer = {
+        answer: `你好！我收到了你的问题："${question}"。\n\n我是你的AI学习搭子，虽然目前我的AI服务还在调试中，但我很乐意帮助你学习！\n\n你可以问我关于学习方法、时间管理、或者任何学习相关的问题。😊`,
+        category: "学习咨询",
+        confidence: 0.9,
+        followUpQuestions: [
+          "需要我推荐一些学习方法吗？",
+          "想了解如何制定学习计划吗？",
+          "有其他学习问题可以继续问我！"
+        ]
+      };
 
-      // 保存问答记录
-      const { error: saveError } = await supabaseAdmin
-        .from('qa_records')
-        .insert({
-          user_id: session.user.id,
-          tenant_id: profile.tenant_id,
-          goal_id: goalId || null,
-          question,
-          answer: answer.answer,
-          category: answer.category,
-          confidence: answer.confidence,
-          context: context || null,
-          follow_up_questions: answer.followUpQuestions
-        });
-
-      if (saveError) {
-        console.error('Failed to save QA record:', saveError);
-        // 不返回错误，因为AI回答已经成功
-      }
-
-      return NextResponse.json({ answer });
+      console.log('✅ Returning mock answer');
+      return NextResponse.json({ answer: mockAnswer });
     } catch (aiError) {
       console.error('AI service error:', aiError);
       
@@ -92,4 +90,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// 添加GET方法用于测试
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'AI Question API is working!',
+    timestamp: new Date().toISOString()
+  });
 }

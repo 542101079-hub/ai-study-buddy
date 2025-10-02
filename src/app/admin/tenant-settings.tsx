@@ -206,7 +206,7 @@ export function TenantSettings({ tenant, onUpdate }: Props) {
             value={formData.name}
             onChange={(e) => handleInputChange("name", e.target.value)}
             disabled={isSubmitting}
-            className="bg-slate-950/70 border-white/15 text-white focus:border-emerald-400/60"
+            className="bg-slate-700/50 border-violet-400/30 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
             placeholder="请输入租户名称"
             maxLength={120}
           />
@@ -222,7 +222,7 @@ export function TenantSettings({ tenant, onUpdate }: Props) {
             value={formData.tagline}
             onChange={(e) => handleInputChange("tagline", e.target.value)}
             disabled={isSubmitting}
-            className="bg-slate-950/70 border-white/15 text-white focus:border-emerald-400/60"
+            className="bg-slate-700/50 border-violet-400/30 text-white placeholder:text-violet-200/50 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30"
             placeholder="请输入租户标语（可选）"
             maxLength={160}
           />
