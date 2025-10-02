@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 import { loadTenantSummary } from "@/lib/auth/tenant-context";
-import { isTenantMembershipTableMissing } from "@/lib/auth/memberships";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Database } from "@/db/types";
 
@@ -34,54 +33,23 @@ export async function POST(request: Request) {
 
   const email = session.user.email.toLowerCase();
 
-  try {
-    const { data: membership, error: membershipError } = await supabaseAdmin
-      .from("app_users")
-      .select("id")
-      .eq("tenant_id", tenantId)
-      .eq("email", email)
-      .maybeSingle();
+  const { error: updateError } = await supabaseAdmin
+    .from("profiles")
+    .update({ tenant_id: tenantId })
+    .eq("id", session.user.id);
 
-    if (membershipError) {
-      if (isTenantMembershipTableMissing(membershipError)) {
-        console.warn("[api/auth/tenant] tenant membership support missing", membershipError);
-        return NextResponse.json(
-          { message: "This account is not permitted to access the selected tenant" },
-          { status: 403 },
-        );
-      }
-
-      throw membershipError;
-    }
-
-    if (!membership) {
-      return NextResponse.json(
-        { message: "This account is not permitted to access the selected tenant" },
-        { status: 403 },
-      );
-    }
-
-    const { error: updateError } = await supabaseAdmin
-      .from("profiles")
-      .update({ tenant_id: tenantId })
-      .eq("id", session.user.id);
-
-    if (updateError) {
-      console.error("[api/auth/tenant] update tenant failed", updateError);
-      return NextResponse.json({ message: "Login failed, please try again later" }, { status: 500 });
-    }
-
-    const tenant = await loadTenantSummary(supabaseAdmin, tenantId);
-
-    return NextResponse.json(
-      {
-        message: "Tenant switched",
-        tenant,
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("[api/auth/tenant] unexpected", error);
+  if (updateError) {
+    console.error("[api/auth/tenant] update tenant failed", updateError);
     return NextResponse.json({ message: "Login failed, please try again later" }, { status: 500 });
   }
+
+  const tenant = await loadTenantSummary(supabaseAdmin, tenantId);
+
+  return NextResponse.json(
+    {
+      message: "Tenant switched",
+      tenant,
+    },
+    { status: 200 },
+  );
 }
