@@ -33,13 +33,20 @@ export function GoalManager({ tenantId }: Props) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   
+  // 获取默认目标日期（一个月后）
+  const getDefaultTargetDate = () => {
+    const defaultDate = new Date();
+    defaultDate.setMonth(defaultDate.getMonth() + 1);
+    return defaultDate.toISOString().split('T')[0];
+  };
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     type: 'skill' as 'exam' | 'skill' | 'career',
     current_level: 1,
     target_level: 10,
-    target_date: ''
+    target_date: getDefaultTargetDate()
   });
 
   useEffect(() => {
@@ -88,7 +95,7 @@ export function GoalManager({ tenantId }: Props) {
           type: 'skill',
           current_level: 1,
           target_level: 10,
-          target_date: ''
+          target_date: getDefaultTargetDate()
         });
         setShowCreateForm(false);
       } else {
@@ -137,12 +144,39 @@ export function GoalManager({ tenantId }: Props) {
     }
   };
 
-  const handleViewDetails = (goal: LearningGoal) => {
+  const handleViewDetails = async (goal: LearningGoal) => {
+    let duration = '未设定';
+    let difficulty = '未设定';
+    
+    // 如果有学习计划，尝试获取持续时间和难度等级
+    if (goal.learning_plans && goal.learning_plans.length > 0) {
+      try {
+        const planId = goal.learning_plans[0].id;
+        const response = await fetch(`/api/learning/plans/${planId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const plan = data.plan;
+          
+          if (plan.plan_data) {
+            const planData = typeof plan.plan_data === 'string' 
+              ? JSON.parse(plan.plan_data) 
+              : plan.plan_data;
+            
+            duration = planData.total_duration_weeks ? `${planData.total_duration_weeks}周` : '未设定';
+            difficulty = planData.difficulty_level ? `${planData.difficulty_level}/10` : '未设定';
+          }
+        }
+      } catch (error) {
+        console.log('Failed to fetch plan details for goal:', error);
+      }
+    }
+    
     const planInfo = goal.learning_plans && goal.learning_plans.length > 0 
       ? `\n\n📋 学习计划 (${goal.learning_plans.length}个):\n${goal.learning_plans.map(plan => `• ${plan.title} (${plan.status})`).join('\n')}`
       : '\n\n📋 学习计划：暂无';
     
-    alert(`查看目标详情：\n\n标题：${goal.title}\n描述：${goal.description || '无'}\n类型：${getTypeLabel(goal.type)}\n当前水平：${goal.current_level}\n目标水平：${goal.target_level}\n目标日期：${goal.target_date ? new Date(goal.target_date).toLocaleDateString() : '无'}\n状态：${goal.status}${planInfo}`);
+    alert(`查看目标详情：\n\n标题：${goal.title}\n描述：${goal.description || '无'}\n类型：${getTypeLabel(goal.type)}\n当前水平：${goal.current_level}/10\n目标水平：${goal.target_level}/10\n目标日期：${goal.target_date ? new Date(goal.target_date).toLocaleDateString() : '无'}\n持续时间：${duration}\n难度等级：${difficulty}\n状态：${goal.status}${planInfo}`);
   };
 
   const handleViewPlan = async (goal: LearningGoal) => {
@@ -353,13 +387,15 @@ export function GoalManager({ tenantId }: Props) {
               </div>
               
               <div>
-                <Label className="text-white/90">目标日期</Label>
+                <Label className="text-white/90">目标日期 <span className="text-violet-300 text-xs">(计划完成日期)</span></Label>
                 <Input
                   type="date"
                   value={formData.target_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_date: e.target.value }))}
                   className="bg-slate-600/70 border-violet-400/40 text-slate-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 shadow-sm"
+                  min={new Date().toISOString().split('T')[0]} // 不能选择过去的日期
                 />
+                <p className="text-xs text-violet-300/70 mt-1">系统将根据此日期计算学习周期</p>
               </div>
             </div>
 

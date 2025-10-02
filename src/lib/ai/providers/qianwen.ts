@@ -102,7 +102,7 @@ export class QianwenProvider implements AIProvider {
       max_tokens: 2000
     });
 
-    return this.parseLearningPlanResponse(response);
+    return this.parseLearningPlanResponse(response, input.goal);
   }
 
   async answerQuestion(question: string, context?: string): Promise<QuestionAnswer> {
@@ -243,7 +243,7 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
     `;
   }
 
-  private parseLearningPlanResponse(response: string): LearningPlanOutput {
+  private parseLearningPlanResponse(response: string, goalData?: any): LearningPlanOutput {
     try {
       console.log('AI response to parse:', response.substring(0, 500) + '...');
       
@@ -320,7 +320,7 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
         
         if (planOverviewMatch) {
           console.log('Using fallback plan with extracted overview');
-          const fallback = this.generateFallbackPlan();
+          const fallback = this.generateFallbackPlan(goalData);
           fallback.plan_overview = planOverviewMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
           return fallback;
         }
@@ -331,7 +331,7 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
       console.error('Failed to parse AI plan response:', error);
       console.log('Using fallback plan instead');
       // 返回备用计划
-      return this.generateFallbackPlan();
+      return this.generateFallbackPlan(goalData);
     }
   }
 
@@ -380,10 +380,23 @@ ${input.historicalData ? `历史数据：${JSON.stringify(input.historicalData)}
     ];
   }
 
-  private generateFallbackPlan(): LearningPlanOutput {
+  private generateFallbackPlan(goalData?: any): LearningPlanOutput {
+    // 如果有目标数据，尝试计算实际的学习周期
+    let totalWeeks = 8; // 默认8周
+    if (goalData?.target_date) {
+      const targetDate = new Date(goalData.target_date);
+      const currentDate = new Date();
+      if (targetDate > currentDate) {
+        const timeDiff = targetDate.getTime() - currentDate.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        totalWeeks = Math.max(1, Math.ceil(daysDiff / 7));
+        console.log(`备用计划计算学习周期: ${totalWeeks}周`);
+      }
+    }
+    
     return {
-      plan_overview: "智能学习计划 - 根据您的目标生成的个性化学习计划。",
-      total_duration_weeks: 8,
+      plan_overview: `智能学习计划 - 根据您的目标生成的个性化学习计划，计划周期${totalWeeks}周。`,
+      total_duration_weeks: totalWeeks,
       difficulty_level: 5,
       learning_phases: [
         {
