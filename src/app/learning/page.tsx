@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { LearningDashboard } from './components/learning-dashboard';
 import { GoalManager } from './components/goal-manager';
 import { AIChatComponent } from './components/ai-chat';
@@ -88,14 +90,20 @@ export default async function LearningPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
         {/* 页面标题 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            🎓 AI智能学习空间
-          </h1>
-          <p className="text-white/70">
-            欢迎回来，{userProfile.display_name || session.user.email?.split('@')[0] || '学习者'}！
-            让我们一起开始今天的学习之旅。
-          </p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">🚀 AI 智能学习空间</h1>
+            <p className="text-white/70">
+              欢迎回来，{userProfile.display_name || session.user.email?.split('@')[0] || '学习者'}，一起继续推进学习旅程吧。
+            </p>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            className="border-white/20 text-white/90 hover:bg-white/10"
+          >
+            <Link href="/dashboard">返回仪表盘</Link>
+          </Button>
         </div>
 
         {/* 主要内容区域 */}
@@ -139,3 +147,4 @@ export default async function LearningPage() {
     </div>
   );
 }
+

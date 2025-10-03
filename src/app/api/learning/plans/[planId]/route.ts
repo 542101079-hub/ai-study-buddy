@@ -3,7 +3,7 @@ import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ planId: string }> }
+  { params }: { params: { planId: string } }
 ) {
   try {
     const session = await getServerSession();
@@ -14,7 +14,7 @@ export async function GET(
       );
     }
 
-    const { planId } = await params;
+    const { planId } = params;
 
     if (!planId) {
       return NextResponse.json(
@@ -23,7 +23,6 @@ export async function GET(
       );
     }
 
-    // 获取学习计划详情
     const { data: plan, error } = await supabaseAdmin
       .from('learning_plans')
       .select(`
@@ -53,6 +52,100 @@ export async function GET(
 
   } catch (error) {
     console.error('Get plan details error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { planId: string } }
+) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { planId } = params;
+
+    if (!planId) {
+      return NextResponse.json(
+        { error: 'Plan ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(planId)) {
+      return NextResponse.json(
+        { error: 'Invalid plan ID format' },
+        { status: 400 }
+      );
+    }
+
+    const { data: plan, error: planError } = await supabaseAdmin
+      .from('learning_plans')
+      .select('id, user_id, tenant_id')
+      .eq('id', planId)
+      .single();
+
+    if (planError || !plan) {
+      return NextResponse.json(
+        { error: 'Plan not found' },
+        { status: 404 }
+      );
+    }
+
+    if (plan.user_id !== session.user.id) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete this plan' },
+        { status: 403 }
+      );
+    }
+
+    const { data: planTasks } = await supabaseAdmin
+      .from('learning_tasks')
+      .select('id')
+      .eq('plan_id', planId)
+      .eq('user_id', session.user.id);
+
+    if (planTasks && planTasks.length > 0) {
+      const taskIds = planTasks.map(task => task.id);
+      await supabaseAdmin
+        .from('learning_records')
+        .delete()
+        .in('task_id', taskIds);
+    }
+
+    await supabaseAdmin
+      .from('learning_tasks')
+      .delete()
+      .eq('plan_id', planId)
+      .eq('user_id', session.user.id);
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('learning_plans')
+      .delete()
+      .eq('id', planId)
+      .eq('user_id', session.user.id);
+
+    if (deleteError) {
+      console.error('Failed to delete plan:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to delete plan' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete plan error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
