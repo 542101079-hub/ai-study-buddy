@@ -124,7 +124,7 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
   ];
 
   return (
-    <div className={`flex flex-col bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 backdrop-blur shadow-2xl relative z-10 overflow-hidden ${className}`}>
+    <div className={`flex flex-col bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-indigo-900/90 rounded-xl border border-violet-500/30 backdrop-blur shadow-2xl relative overflow-hidden mb-6 min-h-[420px] md:min-h-[520px] lg:min-h-[560px] xl:min-h-[640px] lg:max-h-[calc(100vh-3rem)] xl:max-h-[calc(100vh-4rem)] ${className}`}>
       {/* 聊天头部 */}
       <div className="flex items-center gap-3 p-3 border-b border-violet-500/20 bg-gradient-to-r from-violet-600/20 to-purple-600/20">
         <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
@@ -150,102 +150,105 @@ export function AIChatComponent({ goalId, className = "" }: Props) {
         </Button>
       </div>
 
-      {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* 消息列表 */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 min-h-0">
+          {messages.map((message, index) => (
             <div
-              className={`max-w-[85%] rounded-lg px-4 py-3 shadow-lg ${
-                message.role === 'user'
-                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border border-violet-400/30'
-                  : message.isAIUnavailable
-                  ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-100 border border-orange-400/40'
-                  : 'bg-gradient-to-r from-slate-700/80 to-slate-800/80 text-white border border-slate-600/40'
-              }`}
+              key={index}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-              <p className={`text-xs mt-2 ${
-                message.role === 'user' 
-                  ? 'text-violet-100/80' 
-                  : message.isAIUnavailable 
-                  ? 'text-orange-200/70'
-                  : 'text-slate-300/70'
-              }`}>
-                {message.timestamp.toLocaleTimeString('zh-CN', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </p>
-            </div>
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gradient-to-r from-slate-700/80 to-slate-800/80 border border-slate-600/40 rounded-lg px-4 py-3 shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                  <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                </div>
-                <span className="text-slate-200 text-sm">AI正在思考中...</span>
+              <div
+                className={`max-w-[85%] rounded-lg px-4 py-3 shadow-lg ${
+                  message.role === 'user'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border border-violet-400/30'
+                    : message.isAIUnavailable
+                    ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-100 border border-orange-400/40'
+                    : 'bg-gradient-to-r from-slate-700/80 to-slate-800/80 text-white border border-slate-600/40'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                <p className={`text-xs mt-2 ${
+                  message.role === 'user' 
+                    ? 'text-violet-100/80' 
+                    : message.isAIUnavailable 
+                    ? 'text-orange-200/70'
+                    : 'text-slate-300/70'
+                }`}>
+                  {message.timestamp.toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </p>
               </div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-gradient-to-r from-slate-700/80 to-slate-800/80 border border-slate-600/40 rounded-lg px-4 py-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                    <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                  </div>
+                  <span className="text-slate-200 text-sm">AI正在思考中...</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* 快捷问题 */}
+        {messages.length <= 1 && (
+          <div className="px-3 pb-2 mt-2">
+            <p className="text-violet-200/70 text-sm mb-3 font-medium">💡 快速开始：</p>
+            <div className="flex flex-wrap gap-2 max-w-full">
+              {quickQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuickQuestion(question)}
+                  className="text-xs px-3 py-2 bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-100 hover:text-white rounded-full border border-violet-400/30 hover:border-violet-300/50 transition-all duration-200 shadow-sm relative z-20 cursor-pointer"
+                >
+                  {question}
+                </button>
+              ))}
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* 快捷问题 */}
-      {messages.length <= 1 && (
-        <div className="px-3 pb-2">
-          <p className="text-violet-200/70 text-sm mb-3 font-medium">💡 快速开始：</p>
-          <div className="flex flex-wrap gap-2">
-            {quickQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickQuestion(question)}
-                className="text-xs px-3 py-2 bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-100 hover:text-white rounded-full border border-violet-400/30 hover:border-violet-300/50 transition-all duration-200 shadow-sm relative z-20 cursor-pointer"
-              >
-                {question}
-              </button>
-            ))}
+        {/* 输入框 */}
+        <form onSubmit={handleSubmit} className="mt-auto p-3 border-t border-violet-500/20 bg-gradient-to-r from-slate-800/50 to-slate-900/50 relative z-20">
+          <div className="flex gap-3">
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="有什么学习问题想问我吗？"
+              disabled={isLoading}
+              className="flex-1 bg-slate-600/70 border-violet-400/40 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 rounded-lg shadow-sm relative z-30"
+              maxLength={500}
+            />
+            <Button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg shadow-lg border border-violet-400/30 transition-all duration-200 relative z-30"
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                '发送'
+              )}
+            </Button>
           </div>
-        </div>
-      )}
-
-      {/* 输入框 */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-violet-500/20 bg-gradient-to-r from-slate-800/50 to-slate-900/50 relative z-20">
-        <div className="flex gap-3">
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="有什么学习问题想问我吗？"
-            disabled={isLoading}
-            className="flex-1 bg-slate-600/70 border-violet-400/40 text-slate-100 placeholder:text-violet-300/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/30 rounded-lg shadow-sm relative z-30"
-            maxLength={500}
-          />
-          <Button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg shadow-lg border border-violet-400/30 transition-all duration-200 relative z-30"
-          >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              '发送'
-            )}
-          </Button>
-        </div>
-        <p className="text-xs text-violet-300/70 mt-2">
-          {input.length}/500 字符
-        </p>
-      </form>
+          <p className="text-xs text-violet-300/70 mt-2">
+            {input.length}/500 字符
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
+

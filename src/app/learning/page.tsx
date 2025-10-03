@@ -99,7 +99,7 @@ export default async function LearningPage() {
         </div>
 
         {/* 主要内容区域 */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 min-h-0 items-start">
           {/* 左侧：学习仪表板和目标管理 */}
           <div className="lg:col-span-3 space-y-6">
             <LearningDashboard />
@@ -111,14 +111,14 @@ export default async function LearningPage() {
           </div>
 
           {/* 右侧：AI助手和计划生成 */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-8 self-start">
             {/* AI聊天助手 */}
-            <AIChatComponent className="h-[380px] flex-shrink-0" />
+            <AIChatComponent className="flex-shrink-0" />
             
             {/* AI计划生成器 */}
             <PlanGeneratorComponent 
               goals={goals || []}
-              className="flex-shrink-0"
+              className="flex-shrink-0 lg:relative lg:z-20"
             />
           </div>
         </div>
