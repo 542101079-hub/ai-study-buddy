@@ -46,6 +46,7 @@ export function LearningDashboard() {
   const [learningStats, setLearningStats] = useState<LearningStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -102,6 +103,34 @@ export function LearningDashboard() {
       console.error('Error updating task:', error);
     } finally {
       setUpdatingTaskId(null);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    const taskTitle = todayTasks.find(task => task.id === taskId)?.title || '当前任务';
+    if (!confirm(`确认要删除「${taskTitle}」吗？\n\n删除后该任务将不再出现在今日列表中。`)) {
+      return;
+    }
+
+    setDeletingTaskId(taskId);
+    try {
+      const response = await fetch(`/api/learning/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to delete task:', errorData);
+        alert(`删除任务失败: ${errorData.error || '未知错误'}`);
+        return;
+      }
+
+      await loadDashboardData();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('删除任务失败，请稍后重试');
+    } finally {
+      setDeletingTaskId(null);
     }
   };
 
@@ -362,6 +391,15 @@ export function LearningDashboard() {
                         </span>
                       </div>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteTask(task.id)}
+                      disabled={deletingTaskId === task.id}
+                      className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+                    >
+                      {deletingTaskId === task.id ? '删除中...' : '删除'}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -410,3 +448,4 @@ export function LearningDashboard() {
     </div>
   );
 }
+

@@ -32,6 +32,7 @@ export function GoalManager({ tenantId }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
   
   // 获取默认目标日期（一个月后）
   const getDefaultTargetDate = () => {
@@ -49,6 +50,12 @@ export function GoalManager({ tenantId }: Props) {
     target_date: getDefaultTargetDate()
   });
 
+  const notifyGoalsUpdated = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('learningGoals:updated'));
+    }
+  };
+
   useEffect(() => {
     loadGoals();
   }, []);
@@ -60,6 +67,7 @@ export function GoalManager({ tenantId }: Props) {
       if (response.ok) {
         const data = await response.json();
         setGoals(data.goals || []);
+        notifyGoalsUpdated();
       }
     } catch (error) {
       console.error('Failed to load goals:', error);
@@ -89,6 +97,7 @@ export function GoalManager({ tenantId }: Props) {
         const data = await response.json();
         const newGoal = data.goal;
         setGoals(prev => [newGoal, ...prev]);
+        notifyGoalsUpdated();
         setFormData({
           title: '',
           description: '',
@@ -292,6 +301,34 @@ export function GoalManager({ tenantId }: Props) {
     }
   };
 
+  const handleDeleteGoal = async (goal: LearningGoal) => {
+    if (!confirm(`确认要删除学习目标「${goal.title}」？\n\n删除后相关学习计划和任务将一并删除。`)) {
+      return;
+    }
+
+    setDeletingGoalId(goal.id);
+    try {
+      const response = await fetch(`/api/learning/goals/${goal.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to delete goal:', errorData);
+        alert(`删除目标失败: ${errorData.error || '未知错误'}`);
+        return;
+      }
+
+      setGoals(prev => prev.filter(item => item.id !== goal.id));
+      notifyGoalsUpdated();
+    } catch (error) {
+      console.error('Failed to delete goal:', error);
+      alert('删除目标失败，请稍后重试');
+    } finally {
+      setDeletingGoalId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="bg-slate-900/60 rounded-xl border border-white/10 p-6 backdrop-blur">
@@ -491,6 +528,15 @@ export function GoalManager({ tenantId }: Props) {
                       {goal.learning_plans && goal.learning_plans.length > 0 ? '重新生成' : '生成计划'}
                     </Button>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+                    onClick={() => handleDeleteGoal(goal)}
+                    disabled={deletingGoalId === goal.id}
+                  >
+                    {deletingGoalId === goal.id ? '删除中...' : '删除'}
+                  </Button>
                 </div>
               </div>
 

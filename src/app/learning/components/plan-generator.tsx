@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ interface LearningGoal {
   current_level: number;
   target_level: number;
   target_date?: string;
+  status?: 'active' | 'completed' | 'paused' | 'cancelled';
 }
 
 interface GeneratedPlan {
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export function PlanGeneratorComponent({ goals, className = "" }: Props) {
+  const [goalOptions, setGoalOptions] = useState<LearningGoal[]>(goals);
   const [selectedGoalId, setSelectedGoalId] = useState('');
   const [preferences, setPreferences] = useState({
     daily_time_minutes: 60,
@@ -55,11 +57,52 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 调试：检查goals数据
+  const refreshGoalOptions = useCallback(async () => {
+    try {
+      const response = await fetch('/api/learning/goals');
+      if (!response.ok) {
+        throw new Error('Failed to load goals');
+      }
+      const data = await response.json();
+      setGoalOptions(data.goals || []);
+    } catch (err) {
+      console.error('Failed to refresh goals:', err);
+    }
+  }, []);
+
   useEffect(() => {
-    console.log('PlanGeneratorComponent received goals:', goals);
-    console.log('Active goals:', goals.filter(goal => goal.status === 'active'));
+    setGoalOptions(goals);
   }, [goals]);
+
+  useEffect(() => {
+    refreshGoalOptions();
+
+    const handleGoalsUpdated = () => {
+      refreshGoalOptions();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('learningGoals:updated', handleGoalsUpdated);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('learningGoals:updated', handleGoalsUpdated);
+      }
+    };
+  }, [refreshGoalOptions]);
+
+  useEffect(() => {
+    if (selectedGoalId && !goalOptions.some(goal => goal.id === selectedGoalId)) {
+      setSelectedGoalId('');
+      setGeneratedPlan(null);
+    } else if (!selectedGoalId && goalOptions.length > 0) {
+      const firstActiveGoal = goalOptions.find(goal => goal.status === 'active') || goalOptions[0];
+      if (firstActiveGoal) {
+        setSelectedGoalId(firstActiveGoal.id);
+      }
+    }
+  }, [goalOptions, selectedGoalId]);
 
   const handleGenerate = async () => {
     if (!selectedGoalId) {
@@ -98,7 +141,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
     }
   };
 
-  const selectedGoal = goals.find(goal => goal.id === selectedGoalId);
+  const selectedGoal = goalOptions.find(goal => goal.id === selectedGoalId);
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -159,7 +202,7 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
             title="选择学习目标"
           >
             <option value="">请选择一个学习目标</option>
-            {goals.filter(goal => goal.status === 'active').map((goal) => (
+            {goalOptions.filter(goal => goal.status === 'active').map((goal) => (
               <option key={goal.id} value={goal.id}>
                 {goal.title} ({getTypeLabel(goal.type)})
               </option>
@@ -349,3 +392,4 @@ export function PlanGeneratorComponent({ goals, className = "" }: Props) {
     </div>
   );
 }
+
