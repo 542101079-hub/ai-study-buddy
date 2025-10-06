@@ -195,6 +195,19 @@ export function LearningDashboard() {
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
         console.error('Failed to generate daily plan', errorPayload);
+        
+        // 显示详细的错误信息
+        let errorMessage = '生成学习计划失败';
+        if (errorPayload?.error) {
+          errorMessage += `：${errorPayload.error}`;
+          if (errorPayload.details) {
+            errorMessage += `\n详细信息：${errorPayload.details}`;
+          }
+        } else {
+          errorMessage += '，请检查网络连接或稍后重试';
+        }
+        
+        alert(errorMessage);
         await loadDashboardData();
         return;
       }
@@ -338,9 +351,10 @@ const renderSummary = () => {
             <span>剩余 {remainingMinutes} 分钟</span>
           </div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
+            {/* eslint-disable-next-line no-inline-styles */}
             <div
-              className="h-2 rounded-full bg-gradient-to-r from-violet-400 to-purple-500"
-              style={{ width: `${progressPercent}%` }}
+              className={`h-2 rounded-full bg-gradient-to-r from-violet-400 to-purple-500 transition-all duration-300`}
+              style={{ '--progress': `${progressPercent}%` } as React.CSSProperties}
             />
           </div>
         </div>

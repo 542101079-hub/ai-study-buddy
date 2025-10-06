@@ -36,6 +36,28 @@ export async function getServerSession() {
   const supabase = createServerSupabaseClient();
   const {
     data: { session },
+    error
   } = await supabase.auth.getSession();
-  return session ?? null;
+  
+  if (error) {
+    console.error("[getServerSession] error:", error);
+    return null;
+  }
+  
+  return session;
+}
+
+export async function getServerUser() {
+  const supabase = createServerSupabaseClient();
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
+  
+  if (error) {
+    console.error("[getServerUser] error:", error);
+    return null;
+  }
+  
+  return user;
 }

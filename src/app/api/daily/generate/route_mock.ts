@@ -1,25 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { getServerUser } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getServerUser, supabaseAdmin } from "@/lib/supabase/server";
 
 const DEFAULT_DAILY_MINUTES = 240;
 const TOKYO_OFFSET_MS = 9 * 60 * 60 * 1000;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
-const querySchema = z.object({
+const bodySchema = z.object({
+  planId: z.string().trim().min(1).optional(),
   date: z.string().trim().regex(DATE_REGEX).optional(),
   dailyMinutes: z
     .union([z.number(), z.string()])
     .transform((value) => Number(value))
-    .refine((value) => Number.isFinite(value) && value > 0, 'dailyMinutes must be a positive number')
+    .refine((value) => Number.isFinite(value) && value > 0, "dailyMinutes must be a positive number")
     .optional(),
 });
 
 function formatTokyoDate(date: Date): string {
   const tokyo = new Date(date.getTime() + TOKYO_OFFSET_MS);
   const year = tokyo.getUTCFullYear();
-  const month = `${tokyo.getUTCMonth() + 1}`.padStart(2, '0');
-  const day = `${tokyo.getUTCDate()}`.padStart(2, '0');
+  const month = `${tokyo.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${tokyo.getUTCDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -103,10 +104,10 @@ function normalizeTask(task: any) {
 
   return {
     id: task.id,
-    topic: task.topic ?? task.title ?? '',
+    topic: task.topic ?? task.title ?? "",
     estimatedMinutes: Number(task.estimatedMinutes ?? task.estimated_minutes ?? 0),
     actualMinutes: Number(task.actualMinutes ?? task.actual_minutes ?? 0),
-    status: (task.status ?? 'pending') as 'pending' | 'in_progress' | 'completed' | 'skipped',
+    status: (task.status ?? "pending") as "pending" | "in_progress" | "completed" | "skipped",
     orderNum: Number(task.orderNum ?? task.order_num ?? 0),
   };
 }
@@ -122,7 +123,7 @@ function normalizePlan(plan: any) {
     date: dateValue,
     targetMinutes: Number(plan.targetMinutes ?? plan.target_minutes ?? 0),
     actualMinutes: Number(plan.actualMinutes ?? plan.actual_minutes ?? 0),
-    status: plan.status ?? 'draft',
+    status: plan.status ?? "draft",
   };
 }
 
@@ -133,41 +134,77 @@ function normalizeResponse(plan: any, tasks: any[]) {
   };
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
+  let user: Awaited<ReturnType<typeof getServerUser>> | null = null;
+  let tenantId: string | null = null;
+  let targetDate: string | null = null;
+
   try {
-    const user = await getServerUser();
-    if (!user) {
-      console.error('[daily] No valid user found');
+    // 检查环境变量
+    if (!process.env.DATABASE_URL) {
+      console.error("[daily/generate] DATABASE_URL is not set");
       return NextResponse.json({
-        error: '未授权访问',
-        details: '请先登录系统'
+        error: "数据库配置缺失",
+        details: "请检查环境变量配置"
+      }, { status: 500 });
+    }
+
+    user = await getServerUser();
+    if (!user) {
+      console.error("[daily/generate] No valid user found");
+      return NextResponse.json({
+        error: "未授权访问",
+        details: "请先登录系统"
       }, { status: 401 });
     }
 
     // 临时使用Mock数据，绕过DNS问题
-    console.log('[daily] Using mock data due to DNS issues');
+    console.log("[daily/generate] Using mock data due to DNS issues");
 
-    const { searchParams } = new URL(request.url);
-    const parsed = querySchema.safeParse(Object.fromEntries(searchParams));
+    const json = await request.json();
+    const parsed = bodySchema.safeParse(json);
 
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { date, dailyMinutes } = parsed.data;
-    const targetDate = date ?? formatTokyoDate(new Date());
+    const { planId, date, dailyMinutes } = parsed.data;
+    targetDate = date ?? formatTokyoDate(new Date());
 
     // 生成Mock数据
     const mockData = generateMockDailyPlan(user.id, targetDate, dailyMinutes ?? DEFAULT_DAILY_MINUTES);
     
-    return NextResponse.json(normalizeResponse(mockData.plan, mockData.tasks));
+    const normalized = normalizeResponse(mockData.plan, mockData.tasks);
+    return NextResponse.json(normalized);
 
   } catch (error) {
-    console.error('[daily] GET error', error);
+    console.error("[daily/generate] POST error", error);
     
+    // 提供更详细的错误信息
+    if (error instanceof Error) {
+      if (error.message.includes("DATABASE_URL")) {
+        return NextResponse.json({
+          error: "数据库连接失败",
+          details: "请检查数据库配置"
+        }, { status: 500 });
+      }
+      if (error.message.includes("connection") || error.message.includes("ENOTFOUND")) {
+        return NextResponse.json({
+          error: "数据库连接失败",
+          details: "无法连接到Supabase数据库，请检查网络连接或联系管理员"
+        }, { status: 500 });
+      }
+      if (error.message.includes("getaddrinfo ENOTFOUND") || error.message.includes("EAI_AGAIN")) {
+        return NextResponse.json({
+          error: "数据库服务不可用",
+          details: "Supabase数据库服务可能已暂停，请检查项目状态"
+        }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({
-      error: '获取学习计划失败',
-      details: '服务器内部错误，请稍后重试'
+      error: "生成学习计划失败",
+      details: "服务器内部错误，请稍后重试"
     }, { status: 500 });
   }
 }

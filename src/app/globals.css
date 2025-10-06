@@ -31,3 +31,8 @@ select {
     "Segoe UI",
     sans-serif;
 }
+
+/* Progress bar width using CSS variable */
+.h-2[style*="--progress"] {
+  width: var(--progress);
+}
