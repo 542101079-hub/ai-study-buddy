@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerUser } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 const DEFAULT_DAILY_MINUTES = 240;
 const TOKYO_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -23,78 +24,6 @@ function formatTokyoDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// 临时Mock数据生成器
-function generateMockDailyPlan(userId: string, targetDate: string, dailyMinutes: number) {
-  const mockPlan = {
-    id: `mock-plan-${Date.now()}`,
-    tenant_id: 'mock-tenant-id',
-    user_id: userId,
-    plan_id: null,
-    date: targetDate,
-    target_minutes: dailyMinutes,
-    actual_minutes: 0,
-    status: 'draft',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  const mockTasks = [
-    {
-      id: `mock-task-1-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      daily_plan_id: mockPlan.id,
-      phase_id: null,
-      topic: '学习React基础概念',
-      estimated_minutes: Math.min(60, Math.floor(dailyMinutes * 0.3)),
-      actual_minutes: 0,
-      status: 'pending',
-      order_num: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: `mock-task-2-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      daily_plan_id: mockPlan.id,
-      phase_id: null,
-      topic: '练习TypeScript类型系统',
-      estimated_minutes: Math.min(45, Math.floor(dailyMinutes * 0.25)),
-      actual_minutes: 0,
-      status: 'pending',
-      order_num: 2,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: `mock-task-3-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      daily_plan_id: mockPlan.id,
-      phase_id: null,
-      topic: '复习JavaScript异步编程',
-      estimated_minutes: Math.min(30, Math.floor(dailyMinutes * 0.2)),
-      actual_minutes: 0,
-      status: 'pending',
-      order_num: 3,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: `mock-task-4-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      daily_plan_id: mockPlan.id,
-      phase_id: null,
-      topic: '完成练习题和项目实践',
-      estimated_minutes: Math.max(30, dailyMinutes - 135), // 剩余时间
-      actual_minutes: 0,
-      status: 'pending',
-      order_num: 4,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ];
-
-  return { plan: mockPlan, tasks: mockTasks };
-}
 
 function normalizeTask(task: any) {
   if (!task) {
@@ -144,9 +73,6 @@ export async function GET(request: NextRequest) {
       }, { status: 401 });
     }
 
-    // 临时使用Mock数据，绕过DNS问题
-    console.log('[daily] Using mock data due to DNS issues');
-
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse(Object.fromEntries(searchParams));
 
@@ -157,10 +83,81 @@ export async function GET(request: NextRequest) {
     const { date, dailyMinutes } = parsed.data;
     const targetDate = date ?? formatTokyoDate(new Date());
 
-    // 生成Mock数据
-    const mockData = generateMockDailyPlan(user.id, targetDate, dailyMinutes ?? DEFAULT_DAILY_MINUTES);
-    
-    return NextResponse.json(normalizeResponse(mockData.plan, mockData.tasks));
+    // 使用Supabase REST API查询当天的每日计划
+    const { data: existingPlans, error: planError } = await supabaseAdmin
+      .from('daily_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', targetDate)
+      .limit(1);
+
+    if (planError) {
+      console.error('[daily] Error querying daily plans:', planError);
+      return NextResponse.json({
+        error: '查询每日计划失败',
+        details: planError.message
+      }, { status: 500 });
+    }
+
+    let plan = existingPlans?.[0];
+
+    // 如果没有现有计划，创建一个新的
+    if (!plan) {
+      // 获取用户的tenant_id
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('tenant_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('[daily] Error fetching user profile:', profileError);
+        return NextResponse.json({
+          error: '获取用户信息失败',
+          details: '无法获取用户的租户信息'
+        }, { status: 500 });
+      }
+
+      const { data: newPlan, error: insertError } = await supabaseAdmin
+        .from('daily_plans')
+        .insert({
+          user_id: user.id,
+          tenant_id: profile.tenant_id,
+          date: targetDate,
+          target_minutes: dailyMinutes ?? DEFAULT_DAILY_MINUTES,
+          actual_minutes: 0,
+          status: 'draft',
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('[daily] Error creating daily plan:', insertError);
+        return NextResponse.json({
+          error: '创建每日计划失败',
+          details: insertError.message
+        }, { status: 500 });
+      }
+      
+      plan = newPlan;
+    }
+
+    // 查询该计划的所有任务
+    const { data: tasks, error: tasksError } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('daily_plan_id', plan.id)
+      .order('order_num');
+
+    if (tasksError) {
+      console.error('[daily] Error querying daily tasks:', tasksError);
+      return NextResponse.json({
+        error: '查询每日任务失败',
+        details: tasksError.message
+      }, { status: 500 });
+    }
+
+    return NextResponse.json(normalizeResponse(plan, tasks || []));
 
   } catch (error) {
     console.error('[daily] GET error', error);

@@ -28,12 +28,13 @@ export const supabaseAdmin = createClient<Database>(
   },
 );
 
-export function createServerSupabaseClient() {
-  return createServerComponentClient<Database>({ cookies });
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies();
+  return createServerComponentClient<Database>({ cookies: () => cookieStore });
 }
 
 export async function getServerSession() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
     error
@@ -48,7 +49,7 @@ export async function getServerSession() {
 }
 
 export async function getServerUser() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
     error

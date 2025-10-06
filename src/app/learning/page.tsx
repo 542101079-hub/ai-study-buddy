@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
+import { supabaseAdmin, getServerUser } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LearningDashboard } from './components/learning-dashboard';
@@ -8,9 +8,9 @@ import { AIChatComponent } from './components/ai-chat';
 import { PlanGeneratorComponent } from './components/plan-generator';
 
 export default async function LearningPage() {
-  const session = await getServerSession();
+  const user = await getServerUser();
   
-  if (!session?.user) {
+  if (!user) {
     redirect('/signin');
   }
 
@@ -25,7 +25,7 @@ export default async function LearningPage() {
         slug
       )
     `)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single();
 
   // 如果没有档案，需要获取或创建一个默认租户
@@ -54,7 +54,7 @@ export default async function LearningPage() {
     }
     
     userProfile = {
-      display_name: session.user.email?.split('@')[0] || '学习者',
+      display_name: user.email?.split('@')[0] || '学习者',
       tenant_id: defaultTenant?.id || null,
       tenants: defaultTenant || {
         id: null,
@@ -78,7 +78,7 @@ export default async function LearningPage() {
           created_at
         )
       `)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('tenant_id', userProfile.tenant_id)
       .order('created_at', { ascending: false })
       .limit(5);
@@ -94,7 +94,7 @@ export default async function LearningPage() {
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">🚀 AI 智能学习空间</h1>
             <p className="text-white/70">
-              欢迎回来，{userProfile.display_name || session.user.email?.split('@')[0] || '学习者'}，一起继续推进学习旅程吧。
+              欢迎回来，{userProfile.display_name || user.email?.split('@')[0] || '学习者'}，一起继续推进学习旅程吧。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

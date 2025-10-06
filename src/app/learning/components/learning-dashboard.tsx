@@ -236,7 +236,28 @@ export function LearningDashboard() {
       });
 
       if (!response.ok) {
-        console.error('Failed to update task status');
+        const errorData = await response.json().catch(() => null);
+        console.error('Failed to update task status:', errorData);
+        
+        // 显示更详细的错误信息
+        let errorMessage = '更新任务状态失败';
+        if (errorData?.error) {
+          // 确保错误信息是字符串
+          const errorText = typeof errorData.error === 'string' 
+            ? errorData.error 
+            : JSON.stringify(errorData.error);
+          errorMessage += `：${errorText}`;
+          if (errorData.details) {
+            const detailsText = typeof errorData.details === 'string'
+              ? errorData.details
+              : JSON.stringify(errorData.details);
+            errorMessage += `\n详细信息：${detailsText}`;
+          }
+        } else {
+          errorMessage += '，请检查网络连接或稍后重试';
+        }
+        
+        alert(errorMessage);
         return;
       }
 
@@ -244,6 +265,7 @@ export function LearningDashboard() {
       refreshFromPayload(data);
     } catch (error) {
       console.error('Error updating task:', error);
+      alert('网络错误，请检查连接后重试');
     } finally {
       setUpdatingTaskId(null);
     }
@@ -256,7 +278,28 @@ export function LearningDashboard() {
     try {
       const response = await fetch(`/api/daily/tasks/${taskId}/skip-to-tomorrow`, { method: 'POST' });
       if (!response.ok) {
-        console.error('Failed to move task to tomorrow');
+        const errorData = await response.json().catch(() => null);
+        console.error('Failed to move task to tomorrow:', errorData);
+        
+        // 显示更详细的错误信息
+        let errorMessage = '移动任务到明天失败';
+        if (errorData?.error) {
+          // 确保错误信息是字符串
+          const errorText = typeof errorData.error === 'string' 
+            ? errorData.error 
+            : JSON.stringify(errorData.error);
+          errorMessage += `：${errorText}`;
+          if (errorData.details) {
+            const detailsText = typeof errorData.details === 'string'
+              ? errorData.details
+              : JSON.stringify(errorData.details);
+            errorMessage += `\n详细信息：${detailsText}`;
+          }
+        } else {
+          errorMessage += '，请检查网络连接或稍后重试';
+        }
+        
+        alert(errorMessage);
         return;
       }
       const data = await response.json();
@@ -269,6 +312,7 @@ export function LearningDashboard() {
       }
     } catch (error) {
       console.error('Error moving task to tomorrow:', error);
+      alert('网络错误，请检查连接后重试');
     } finally {
       setUpdatingTaskId(null);
     }

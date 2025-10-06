@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { PlanActions } from './plan-actions';
-import { supabaseAdmin, getServerSession } from '@/lib/supabase/server';
+import { supabaseAdmin, getServerUser } from '@/lib/supabase/server';
 
 interface LearningPlanRow {
   id: string;
@@ -78,12 +78,14 @@ const statusMap: Record<string, { label: string; className: string }> = {
 export default async function LearningPlansPage({
   searchParams,
 }: {
-  searchParams?: { planId?: string | string[] };
+  searchParams?: Promise<{ planId?: string | string[] }>;
 }) {
-  const session = await getServerSession();
-  if (!session?.user) {
+  const user = await getServerUser();
+  if (!user) {
     redirect('/signin');
   }
+
+  const resolvedSearchParams = await searchParams;
 
   const { data: planRows, error } = await supabaseAdmin
     .from('learning_plans')
@@ -103,7 +105,7 @@ export default async function LearningPlansPage({
         target_date
       )
     `)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -116,7 +118,7 @@ export default async function LearningPlansPage({
     plan_data: parsePlanData(plan.plan_data),
   }));
 
-  const planIdParam = searchParams?.planId;
+  const planIdParam = resolvedSearchParams?.planId;
   const selectedPlanId = Array.isArray(planIdParam)
     ? planIdParam[0]
     : planIdParam || plans[0]?.id || null;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerUser } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 const VALID_STATUSES = ['pending', 'in_progress', 'completed', 'skipped'] as const;
 const StatusEnum = z.enum(VALID_STATUSES);
@@ -52,10 +53,8 @@ function normalizeResponse(plan: any, tasks: any[]) {
   };
 }
 
-// Mock数据存储（临时解决方案）
-const mockDataStore = new Map<string, any>();
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getServerUser();
     if (!user) {
@@ -66,10 +65,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }, { status: 401 });
     }
 
-    // 临时使用Mock数据，绕过DNS问题
-    console.log('[daily/tasks] Using mock data due to DNS issues');
-
-    const parsedParams = ParamsSchema.safeParse(params);
+    const resolvedParams = await params;
+    const parsedParams = ParamsSchema.safeParse(resolvedParams);
     if (!parsedParams.success) {
       return NextResponse.json({ error: parsedParams.error.flatten() }, { status: 400 });
     }
@@ -84,76 +81,74 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const { status, actualMinutes } = parsedBody.data;
 
-    // 生成Mock数据
-    const mockPlan = {
-      id: `mock-plan-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      user_id: user.id,
-      plan_id: null,
-      date: new Date().toISOString().slice(0, 10),
-      target_minutes: 240,
-      actual_minutes: actualMinutes || 0,
-      status: 'draft',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    // 查找任务
+    const { data: task, error: taskError } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    const mockTasks = [
-      {
-        id: id,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: mockPlan.id,
-        phase_id: null,
-        topic: '学习React基础概念',
-        estimated_minutes: 60,
-        actual_minutes: actualMinutes || 0,
-        status: status || 'pending',
-        order_num: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-2-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: mockPlan.id,
-        phase_id: null,
-        topic: '练习TypeScript类型系统',
-        estimated_minutes: 45,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-3-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: mockPlan.id,
-        phase_id: null,
-        topic: '复习JavaScript异步编程',
-        estimated_minutes: 30,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 3,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-4-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: mockPlan.id,
-        phase_id: null,
-        topic: '完成练习题和项目实践',
-        estimated_minutes: 105,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 4,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
+    if (taskError || !task) {
+      console.error('[daily/tasks] Task not found:', taskError);
+      return NextResponse.json({
+        error: '任务不存在',
+        details: '找不到指定的任务'
+      }, { status: 404 });
+    }
 
-    const normalized = normalizeResponse(mockPlan, mockTasks);
+    // 更新任务状态
+    const updateData: any = {};
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+    if (actualMinutes !== undefined) {
+      updateData.actual_minutes = actualMinutes;
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from('daily_tasks')
+      .update(updateData)
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('[daily/tasks] Error updating task:', updateError);
+      return NextResponse.json({
+        error: '更新任务失败',
+        details: updateError.message
+      }, { status: 500 });
+    }
+
+    // 获取更新后的计划信息
+    const { data: plan, error: planError } = await supabaseAdmin
+      .from('daily_plans')
+      .select('*')
+      .eq('id', task.daily_plan_id)
+      .single();
+
+    if (planError) {
+      console.error('[daily/tasks] Error fetching plan:', planError);
+      return NextResponse.json({
+        error: '获取计划信息失败',
+        details: planError.message
+      }, { status: 500 });
+    }
+
+    // 获取该计划的所有任务
+    const { data: allTasks, error: tasksError } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('daily_plan_id', task.daily_plan_id)
+      .order('order_num');
+
+    if (tasksError) {
+      console.error('[daily/tasks] Error fetching tasks:', tasksError);
+      return NextResponse.json({
+        error: '获取任务列表失败',
+        details: tasksError.message
+      }, { status: 500 });
+    }
+
+    const normalized = normalizeResponse(plan, allTasks || []);
     return NextResponse.json(normalized);
 
   } catch (error) {

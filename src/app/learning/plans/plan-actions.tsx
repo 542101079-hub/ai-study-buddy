@@ -27,14 +27,35 @@ export function PlanActions({ planId, planTitle, isActive }: PlanActionsProps) {
       });
 
       if (!response.ok) {
-        console.error('Failed to generate daily plan from learning plan');
+        const errorData = await response.json().catch(() => null);
+        console.error('Failed to generate daily plan from learning plan:', errorData);
+        
+        // 显示详细的错误信息
+        let errorMessage = '生成今日计划失败';
+        if (errorData?.error) {
+          errorMessage += `：${errorData.error}`;
+          if (errorData.details) {
+            errorMessage += `\n详细信息：${errorData.details}`;
+          }
+        } else {
+          errorMessage += '，请检查网络连接或稍后重试';
+        }
+        
+        alert(errorMessage);
         return;
       }
 
-      await response.json().catch(() => undefined);
+      const data = await response.json();
+      console.log('Daily plan generated successfully:', data);
+      
+      // 显示成功消息
+      alert(`今日计划生成成功！\n\n已生成 ${data.tasks?.length || 0} 个学习任务\n\n即将跳转到学习页面查看详情...`);
+      
+      // 跳转到学习页面
       router.push('/learning#daily-plan');
     } catch (error) {
       console.error('Error generating daily plan:', error);
+      alert('生成今日计划失败，请检查网络连接后重试');
     } finally {
       setIsGenerating(false);
     }

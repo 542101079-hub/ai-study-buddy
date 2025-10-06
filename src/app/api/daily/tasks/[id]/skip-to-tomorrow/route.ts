@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getServerUser } from '@/lib/supabase/server';
+import { getServerUser, supabaseAdmin } from '@/lib/supabase/server';
 
 const TOKYO_OFFSET_MS = 9 * 60 * 60 * 1000;
 const ParamsSchema = z.object({ id: z.string() });
@@ -44,7 +44,7 @@ function normalizeResponse(plan: any, tasks: any[]) {
   };
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getServerUser();
     if (!user) {
@@ -55,165 +55,140 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       }, { status: 401 });
     }
 
-    // 临时使用Mock数据，绕过DNS问题
-    console.log('[daily/tasks/skip-to-tomorrow] Using mock data due to DNS issues');
-
-    const parsedParams = ParamsSchema.safeParse(params);
+    const resolvedParams = await params;
+    const parsedParams = ParamsSchema.safeParse(resolvedParams);
     if (!parsedParams.success) {
       return NextResponse.json({ error: parsedParams.error.flatten() }, { status: 400 });
     }
 
     const { id } = parsedParams.data;
 
-    // 生成今天的Mock数据
-    const todayPlan = {
-      id: `mock-plan-today-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      user_id: user.id,
-      plan_id: null,
-      date: formatTokyoDate(new Date()),
-      target_minutes: 240,
-      actual_minutes: 0,
-      status: 'draft',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    // 查找当前任务
+    const { data: task, error: taskError } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    const todayTasks = [
-      {
-        id: `mock-task-1-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: todayPlan.id,
-        phase_id: null,
-        topic: '学习React基础概念',
-        estimated_minutes: 60,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-2-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: todayPlan.id,
-        phase_id: null,
-        topic: '练习TypeScript类型系统',
-        estimated_minutes: 45,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-3-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: todayPlan.id,
-        phase_id: null,
-        topic: '复习JavaScript异步编程',
-        estimated_minutes: 30,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 3,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-4-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: todayPlan.id,
-        phase_id: null,
-        topic: '完成练习题和项目实践',
-        estimated_minutes: 105,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 4,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
+    if (taskError || !task) {
+      console.error('[daily/tasks] Task not found:', taskError);
+      return NextResponse.json({
+        error: '任务不存在',
+        details: '找不到指定的任务'
+      }, { status: 404 });
+    }
 
-    // 生成明天的Mock数据
+    // 获取当前计划
+    const { data: currentPlan, error: currentPlanError } = await supabaseAdmin
+      .from('daily_plans')
+      .select('*')
+      .eq('id', task.daily_plan_id)
+      .single();
+
+    if (currentPlanError || !currentPlan) {
+      console.error('[daily/tasks] Plan not found:', currentPlanError);
+      return NextResponse.json({
+        error: '计划不存在',
+        details: '找不到关联的每日计划'
+      }, { status: 404 });
+    }
+
+    // 计算明天的日期
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const tomorrowPlan = {
-      id: `mock-plan-tomorrow-${Date.now()}`,
-      tenant_id: 'mock-tenant-id',
-      user_id: user.id,
-      plan_id: null,
-      date: formatTokyoDate(tomorrow),
-      target_minutes: 240,
-      actual_minutes: 0,
-      status: 'draft',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    const tomorrowDate = formatTokyoDate(tomorrow);
 
-    const tomorrowTasks = [
-      {
-        id: id, // 使用被跳过的任务ID
-        tenant_id: 'mock-tenant-id',
+    // 查找或创建明天的计划
+    let { data: tomorrowPlan, error: tomorrowPlanError } = await supabaseAdmin
+      .from('daily_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', tomorrowDate)
+      .limit(1)
+      .single();
+
+    if (tomorrowPlanError || !tomorrowPlan) {
+      const { data: newPlan, error: insertError } = await supabaseAdmin
+        .from('daily_plans')
+        .insert({
+          user_id: user.id,
+          tenant_id: currentPlan.tenant_id,
+          date: tomorrowDate,
+          target_minutes: currentPlan.target_minutes,
+          actual_minutes: 0,
+          status: 'draft',
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[daily/tasks] Error creating tomorrow plan:', insertError);
+        return NextResponse.json({
+          error: '创建明天计划失败',
+          details: insertError.message
+        }, { status: 500 });
+      }
+
+      tomorrowPlan = newPlan;
+    }
+
+    // 将任务移动到明天的计划
+    const { error: updateTaskError } = await supabaseAdmin
+      .from('daily_tasks')
+      .update({
         daily_plan_id: tomorrowPlan.id,
-        phase_id: null,
-        topic: '学习React基础概念（从昨天延期）',
-        estimated_minutes: 60,
-        actual_minutes: 0,
         status: 'pending',
-        order_num: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-2-tomorrow-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: tomorrowPlan.id,
-        phase_id: null,
-        topic: '练习TypeScript类型系统',
-        estimated_minutes: 45,
         actual_minutes: 0,
-        status: 'pending',
-        order_num: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-3-tomorrow-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: tomorrowPlan.id,
-        phase_id: null,
-        topic: '复习JavaScript异步编程',
-        estimated_minutes: 30,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 3,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: `mock-task-4-tomorrow-${Date.now()}`,
-        tenant_id: 'mock-tenant-id',
-        daily_plan_id: tomorrowPlan.id,
-        phase_id: null,
-        topic: '完成练习题和项目实践',
-        estimated_minutes: 105,
-        actual_minutes: 0,
-        status: 'pending',
-        order_num: 4,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
+        order_num: 1, // 设置为第一个任务
+      })
+      .eq('id', id);
+
+    if (updateTaskError) {
+      console.error('[daily/tasks] Error moving task to tomorrow:', updateTaskError);
+      return NextResponse.json({
+        error: '移动任务到明天失败',
+        details: updateTaskError.message
+      }, { status: 500 });
+    }
+
+    // 获取更新后的今天计划的所有任务
+    const { data: todayTasks, error: todayTasksError } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('daily_plan_id', currentPlan.id)
+      .order('order_num');
+
+    if (todayTasksError) {
+      console.error('[daily/tasks] Error fetching today tasks:', todayTasksError);
+      return NextResponse.json({
+        error: '获取今日任务失败',
+        details: todayTasksError.message
+      }, { status: 500 });
+    }
+
+    // 获取明天的计划的所有任务
+    const { data: tomorrowTasks, error: tomorrowTasksError } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('daily_plan_id', tomorrowPlan.id)
+      .order('order_num');
+
+    if (tomorrowTasksError) {
+      console.error('[daily/tasks] Error fetching tomorrow tasks:', tomorrowTasksError);
+      return NextResponse.json({
+        error: '获取明天任务失败',
+        details: tomorrowTasksError.message
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
-      today: normalizeResponse(todayPlan, todayTasks),
-      tomorrow: normalizeResponse(tomorrowPlan, tomorrowTasks),
+      today: normalizeResponse(currentPlan, todayTasks || []),
+      tomorrow: normalizeResponse(tomorrowPlan, tomorrowTasks || []),
     });
 
   } catch (error) {
     console.error('[daily/tasks/skip-to-tomorrow] POST error', error);
-    
+
     return NextResponse.json({
       error: '移动任务到明天失败',
       details: '服务器内部错误，请稍后重试'
