@@ -3,7 +3,10 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
+  integer,
+  jsonb,
   pgPolicy,
   pgSchema,
   pgTable,
@@ -51,7 +54,7 @@ export const tenants = pgTable(
 ).enableRLS();
 
 export const appUsers = pgTable(
-  "users",
+  "app_users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     tenantId: uuid("tenant_id")
@@ -157,6 +160,463 @@ export const sessions = pgTable(
   }),
 );
 
+
+export const learningGoals = pgTable(
+  "learning_goals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description"),
+    type: varchar("type", { length: 20 }).notNull(),
+    currentLevel: integer("current_level").notNull().default(1),
+    targetLevel: integer("target_level").notNull().default(10),
+    targetDate: timestamp("target_date", { withTimezone: true }),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOrAdmin = sql`auth.uid() = ${table.userId} OR ${tenantAdmin}` as const;
+
+    return {
+      typeAllowed: check(
+        "learning_goals_type_allowed",
+        sql`${table.type} IN ('exam', 'skill', 'career')`,
+      ),
+      currentLevelRange: check(
+        "learning_goals_current_level_range",
+        sql`${table.currentLevel} BETWEEN 1 AND 10`,
+      ),
+      targetLevelRange: check(
+        "learning_goals_target_level_range",
+        sql`${table.targetLevel} BETWEEN 1 AND 10`,
+      ),
+      statusAllowed: check(
+        "learning_goals_status_allowed",
+        sql`${table.status} IN ('active', 'completed', 'paused', 'cancelled')`,
+      ),
+      userTenantIdx: index("idx_learning_goals_user_tenant").on(
+        table.userId,
+        table.tenantId,
+      ),
+      statusIdx: index("idx_learning_goals_status").on(table.status),
+      learningGoalsPolicy: pgPolicy("learning_goals_tenant_access", {
+        for: "all",
+        to: "authenticated",
+        using: selfOrAdmin,
+        withCheck: selfOrAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const learningPlans = pgTable(
+  "learning_plans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id")
+      .notNull()
+      .references(() => learningGoals.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description"),
+    planData: jsonb("plan_data").notNull().default(sql`'{}'::jsonb`),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    startDate: timestamp("start_date", { withTimezone: true }).defaultNow().notNull(),
+    endDate: timestamp("end_date", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOrAdmin = sql`auth.uid() = ${table.userId} OR ${tenantAdmin}` as const;
+
+    return {
+      statusAllowed: check(
+        "learning_plans_status_allowed",
+        sql`${table.status} IN ('active', 'completed', 'paused', 'cancelled')`,
+      ),
+      userGoalIdx: index("idx_learning_plans_user_goal").on(table.userId, table.goalId),
+      statusIdx: index("idx_learning_plans_status").on(table.status),
+      learningPlansPolicy: pgPolicy("learning_plans_tenant_access", {
+        for: "all",
+        to: "authenticated",
+        using: selfOrAdmin,
+        withCheck: selfOrAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const learningTasks = pgTable(
+  "learning_tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    planId: uuid("plan_id").references(() => learningPlans.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id").references(() => learningGoals.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description"),
+    type: varchar("type", { length: 20 }).notNull().default("study"),
+    difficulty: integer("difficulty").notNull().default(5),
+    estimatedMinutes: integer("estimated_minutes").notNull().default(60),
+    actualMinutes: integer("actual_minutes").default(0),
+    resources: text("resources").array().default(sql`'{}'::text[]`),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOrAdmin = sql`auth.uid() = ${table.userId} OR ${tenantAdmin}` as const;
+
+    return {
+      typeAllowed: check(
+        "learning_tasks_type_allowed",
+        sql`${table.type} IN ('study', 'reading', 'practice', 'quiz', 'project', 'review', 'coding')`,
+      ),
+      difficultyRange: check(
+        "learning_tasks_difficulty_range",
+        sql`${table.difficulty} BETWEEN 1 AND 10`,
+      ),
+      estimatedMinutesRange: check(
+        "learning_tasks_estimated_minutes_range",
+        sql`${table.estimatedMinutes} BETWEEN 5 AND 480`,
+      ),
+      statusAllowed: check(
+        "learning_tasks_status_allowed",
+        sql`${table.status} IN ('pending', 'in_progress', 'completed', 'skipped')`,
+      ),
+      planStatusIdx: index("idx_learning_tasks_plan_status").on(
+        table.planId,
+        table.status,
+      ),
+      userDueIdx: index("idx_learning_tasks_user_due").on(table.userId, table.dueDate),
+      learningTasksPolicy: pgPolicy("learning_tasks_tenant_access", {
+        for: "all",
+        to: "authenticated",
+        using: selfOrAdmin,
+        withCheck: selfOrAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const dailyPlans = pgTable(
+  "daily_plans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    planId: uuid("plan_id").references(() => learningPlans.id, { onDelete: "set null" }),
+    date: date("date", { mode: "date" }).notNull(),
+    targetMinutes: integer("target_minutes").notNull().default(120),
+    actualMinutes: integer("actual_minutes").notNull().default(0),
+    status: varchar("status", { length: 20 }).notNull().default("draft"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOrAdmin = sql`auth.uid() = ${table.userId} OR ${tenantAdmin}` as const;
+
+    return {
+      statusAllowed: check(
+        "daily_plans_status_allowed",
+        sql`${table.status} IN ('draft', 'in_progress', 'completed', 'skipped')`,
+      ),
+      targetMinutesRange: check(
+        "daily_plans_target_minutes_range",
+        sql`${table.targetMinutes} BETWEEN 0 AND 1440`,
+      ),
+      actualMinutesRange: check(
+        "daily_plans_actual_minutes_range",
+        sql`${table.actualMinutes} BETWEEN 0 AND 1440`,
+      ),
+      userDateUnique: uniqueIndex("daily_plans_user_date_unique").on(
+        table.userId,
+        table.date,
+      ),
+      userDateIdx: index("idx_daily_plans_user_date").on(table.userId, table.date),
+      tenantDateIdx: index("idx_daily_plans_tenant_date").on(table.tenantId, table.date),
+      dailyPlansPolicy: pgPolicy("daily_plans_tenant_access", {
+        for: "all",
+        to: "authenticated",
+        using: selfOrAdmin,
+        withCheck: selfOrAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const dailyPlanReflections = pgTable(
+  "daily_plan_reflections",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    dailyPlanId: uuid("daily_plan_id")
+      .notNull()
+      .references(() => dailyPlans.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
+    moodScore: integer("mood_score"),
+    energyScore: integer("energy_score"),
+    summary: text("summary"),
+    blockers: text("blockers"),
+    wins: text("wins"),
+    metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOrAdmin = sql`auth.uid() = ${table.userId} OR ${tenantAdmin}` as const;
+
+    return {
+      moodScoreRange: check(
+        "daily_plan_reflections_mood_score_range",
+        sql`${table.moodScore} BETWEEN 1 AND 5`,
+      ),
+      energyScoreRange: check(
+        "daily_plan_reflections_energy_score_range",
+        sql`${table.energyScore} BETWEEN 1 AND 5`,
+      ),
+      planRecordedIdx: index("idx_daily_plan_reflections_plan").on(
+        table.dailyPlanId,
+        table.recordedAt,
+      ),
+      dailyPlanReflectionsPolicy: pgPolicy("daily_plan_reflections_tenant_access", {
+        for: "all",
+        to: "authenticated",
+        using: selfOrAdmin,
+        withCheck: selfOrAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const dailyTasks = pgTable(
+  "daily_tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    dailyPlanId: uuid("daily_plan_id")
+      .notNull()
+      .references(() => dailyPlans.id, { onDelete: "cascade" }),
+    phaseId: uuid("phase_id"),
+    topic: text("topic").notNull(),
+    estimatedMinutes: integer("estimated_minutes").notNull().default(30),
+    actualMinutes: integer("actual_minutes").notNull().default(0),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    orderNum: integer("order_num").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantScope = sql`EXISTS (
+      SELECT 1
+      FROM daily_plans dp
+      WHERE dp.id = ${table.dailyPlanId}
+        AND (
+          dp.user_id = auth.uid() OR
+          EXISTS (
+            SELECT 1
+            FROM public.profiles AS admin_profiles
+            WHERE admin_profiles.id = auth.uid()
+              AND admin_profiles.tenant_id = dp.tenant_id
+              AND admin_profiles.role = 'admin'
+          )
+        )
+    )` as const;
+
+    return {
+      estimatedMinutesRange: check(
+        "daily_tasks_estimated_minutes_range",
+        sql`${table.estimatedMinutes} BETWEEN 5 AND 480`,
+      ),
+      actualMinutesRange: check(
+        "daily_tasks_actual_minutes_range",
+        sql`${table.actualMinutes} BETWEEN 0 AND 1440`,
+      ),
+      statusAllowed: check(
+        "daily_tasks_status_allowed",
+        sql`${table.status} IN ('pending', 'in_progress', 'completed', 'skipped')`,
+      ),
+      orderUnique: uniqueIndex("daily_tasks_plan_order_unique").on(
+        table.dailyPlanId,
+        table.orderNum,
+      ),
+      planOrderIdx: index("idx_daily_tasks_plan_order").on(
+        table.dailyPlanId,
+        table.orderNum,
+      ),
+      statusIdx: index("idx_daily_tasks_status").on(table.status),
+      dailyTasksPolicy: pgPolicy("daily_tasks_tenant_access", {
+        for: "all",
+        to: "authenticated",
+        using: tenantScope,
+        withCheck: tenantScope,
+      }),
+    };
+  },
+).enableRLS();
+
+
+export const learningGoalRelations = relations(learningGoals, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [learningGoals.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [learningGoals.userId],
+    references: [authUsers.id],
+  }),
+  plans: many(learningPlans),
+  tasks: many(learningTasks),
+}));
+
+export const learningPlanRelations = relations(learningPlans, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [learningPlans.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [learningPlans.userId],
+    references: [authUsers.id],
+  }),
+  goal: one(learningGoals, {
+    fields: [learningPlans.goalId],
+    references: [learningGoals.id],
+  }),
+  tasks: many(learningTasks),
+  dailyPlans: many(dailyPlans),
+}));
+
+export const learningTaskRelations = relations(learningTasks, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [learningTasks.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [learningTasks.userId],
+    references: [authUsers.id],
+  }),
+  plan: one(learningPlans, {
+    fields: [learningTasks.planId],
+    references: [learningPlans.id],
+  }),
+  goal: one(learningGoals, {
+    fields: [learningTasks.goalId],
+    references: [learningGoals.id],
+  }),
+}));
+
+export const dailyPlanRelations = relations(dailyPlans, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [dailyPlans.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [dailyPlans.userId],
+    references: [authUsers.id],
+  }),
+  sourcePlan: one(learningPlans, {
+    fields: [dailyPlans.planId],
+    references: [learningPlans.id],
+  }),
+  reflections: many(dailyPlanReflections),
+  tasks: many(dailyTasks),
+}));
+
+export const dailyPlanReflectionRelations = relations(dailyPlanReflections, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [dailyPlanReflections.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [dailyPlanReflections.userId],
+    references: [authUsers.id],
+  }),
+  dailyPlan: one(dailyPlans, {
+    fields: [dailyPlanReflections.dailyPlanId],
+    references: [dailyPlans.id],
+  }),
+}));
+
+export const dailyTaskRelations = relations(dailyTasks, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [dailyTasks.tenantId],
+    references: [tenants.id],
+  }),
+  dailyPlan: one(dailyPlans, {
+    fields: [dailyTasks.dailyPlanId],
+    references: [dailyPlans.id],
+  }),
+}));
+
 export const tenantRelations = relations(tenants, ({ many }) => ({
   profiles: many(profiles),
   users: many(appUsers),
@@ -189,6 +649,18 @@ export type NewUser = typeof appUsers.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
+export type LearningGoal = typeof learningGoals.$inferSelect;
+export type NewLearningGoal = typeof learningGoals.$inferInsert;
+export type LearningPlan = typeof learningPlans.$inferSelect;
+export type NewLearningPlan = typeof learningPlans.$inferInsert;
+export type LearningTask = typeof learningTasks.$inferSelect;
+export type NewLearningTask = typeof learningTasks.$inferInsert;
+export type DailyPlan = typeof dailyPlans.$inferSelect;
+export type NewDailyPlan = typeof dailyPlans.$inferInsert;
+export type DailyPlanReflection = typeof dailyPlanReflections.$inferSelect;
+export type NewDailyPlanReflection = typeof dailyPlanReflections.$inferInsert;
+export type DailyTask = typeof dailyTasks.$inferSelect;
+export type NewDailyTask = typeof dailyTasks.$inferInsert;
 
-export const users = appUsers;
+export { appUsers as users };
 

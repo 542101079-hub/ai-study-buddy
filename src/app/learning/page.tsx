@@ -97,20 +97,28 @@ export default async function LearningPage() {
               欢迎回来，{userProfile.display_name || session.user.email?.split('@')[0] || '学习者'}，一起继续推进学习旅程吧。
             </p>
           </div>
-          <Button
-            asChild
-            variant="outline"
-            className="border-white/20 text-white/90 hover:bg-white/10"
-          >
-            <Link href="/dashboard">返回仪表盘</Link>
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              asChild
+              className="bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg hover:from-violet-700 hover:to-purple-700"
+            >
+              <Link href="/learning/today">查看今日计划</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-white/20 text-white/90 hover:bg-white/10"
+            >
+              <Link href="/dashboard">返回仪表盘</Link>
+            </Button>
+          </div>
         </div>
 
         {/* 主要内容区域 */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 min-h-0 items-start">
           {/* 左侧：学习仪表板和目标管理 */}
           <div className="lg:col-span-3 space-y-6">
-            <LearningDashboard />
+            <div id="daily-plan"><LearningDashboard /></div>
             
             {/* 学习目标管理 */}
             <GoalManager 
