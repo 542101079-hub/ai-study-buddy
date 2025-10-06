@@ -175,7 +175,10 @@ export function LearningDashboard() {
     }
     setDailyPlan(normalizedPlan);
     setTasks(normalizedTasks);
-    setTaskStats(buil  const handleGeneratePlan = async () => {
+    setTaskStats(buildTaskStats(normalizedTasks));
+  };
+
+  const handleGeneratePlan = async () => {
     const safeMinutes = Math.min(
       MAX_GENERATE_MINUTES,
       Math.max(MIN_GENERATE_MINUTES, Math.round(customMinutes || DEFAULT_DAILY_MINUTES)),
@@ -190,7 +193,9 @@ export function LearningDashboard() {
       });
 
       if (!response.ok) {
-        console.error('Failed to generate daily plan');
+        const errorPayload = await response.json().catch(() => null);
+        console.error('Failed to generate daily plan', errorPayload);
+        await loadDashboardData();
         return;
       }
 
@@ -198,12 +203,10 @@ export function LearningDashboard() {
       refreshFromPayload(data);
     } catch (error) {
       console.error('Error generating daily plan:', error);
+      await loadDashboardData();
     } finally {
       setIsGenerating(false);
     }
-  };
-
-dTaskStats(normalizedTasks));
   };
 
   const handleTaskStatusUpdate = async (
@@ -274,11 +277,11 @@ const renderSummary = () => {
   if (!dailyPlan) {
     return (
       <div className="rounded-2xl border border-violet-500/40 bg-gradient-to-br from-violet-900/60 via-purple-900/50 to-slate-900/60 p-6 shadow-[0_18px_40px_rgba(91,33,182,0.35)]">
-        <h3 className="text-lg font-semibold text-white">Daily study plan</h3>
-        <p className="mt-2 text-sm text-white/70">No plan yet. Pick a target duration and let the assistant auto-build one for today.</p>
+        <h3 className="text-lg font-semibold text-white">每日学习计划</h3>
+        <p className="mt-2 text-sm text-white/70">暂未生成计划。请选择目标时长，让学习助手为你自动生成今日计划。</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-            <span className="text-xs text-white/60">Target minutes</span>
+            <span className="text-xs text-white/60">目标时长（分钟）</span>
             <Input
               type="number"
               min={MIN_GENERATE_MINUTES}
@@ -292,7 +295,7 @@ const renderSummary = () => {
                   ),
                 )
               }
-              className="w-24 bg-transparent text-white"
+              className="w-24 bg-white text-slate-900 placeholder:text-slate-400"
             />
           </div>
           <Button
@@ -300,7 +303,7 @@ const renderSummary = () => {
             disabled={isGenerating}
             className="bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg hover:from-violet-600 hover:to-purple-600"
           >
-            {isGenerating ? 'Generating…' : 'Generate today’s plan'}
+            {isGenerating ? '生成中...' : '生成今日计划'}
           </Button>
         </div>
       </div>
@@ -311,7 +314,7 @@ const renderSummary = () => {
   const progressPercent = dailyPlan.targetMinutes > 0
     ? Math.min(100, Math.round((dailyPlan.actualMinutes / dailyPlan.targetMinutes) * 100))
     : 0;
-  const planDateLabel = dailyPlan.date ? formatDateLabel(dailyPlan.date) ?? 'Today' : 'Today';
+  const planDateLabel = dailyPlan.date ? formatDateLabel(dailyPlan.date) ?? '今日' : '今日';
   const estimatedTotal = taskStats?.total_estimated_minutes ?? 0;
   const estimatedCompleted = taskStats?.completed_minutes ?? 0;
   const estimatedRemaining = Math.max(estimatedTotal - estimatedCompleted, 0);
@@ -325,14 +328,14 @@ const renderSummary = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider text-violet-200/70">{planDateLabel}</p>
-            <h4 className="mt-1 text-xl font-semibold text-white">Today’s plan</h4>
+            <h4 className="mt-1 text-xl font-semibold text-white">今日计划</h4>
           </div>
-          <span className="text-sm text-white/60">Target {dailyPlan.targetMinutes} min</span>
+          <span className="text-sm text-white/60">目标 {dailyPlan.targetMinutes} 分钟</span>
         </div>
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>Logged {dailyPlan.actualMinutes} min</span>
-            <span>Remaining {remainingMinutes} min</span>
+            <span>已完成 {dailyPlan.actualMinutes} 分钟</span>
+            <span>剩余 {remainingMinutes} 分钟</span>
           </div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
             <div
@@ -343,17 +346,17 @@ const renderSummary = () => {
         </div>
       </div>
       <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6">
-        <p className="text-xs text-emerald-200/70">Task progress</p>
+        <p className="text-xs text-emerald-200/70">任务进度</p>
         <p className="mt-2 text-2xl font-semibold text-emerald-100">
           {taskStats ? `${taskStats.completed}/${taskStats.total}` : '--'}
         </p>
-        <p className="mt-1 text-xs text-emerald-200/70">Completed {estimatedCompleted} min</p>
-        <p className="mt-2 text-xs text-emerald-100/80">Remaining {estimatedRemaining} min</p>
+        <p className="mt-1 text-xs text-emerald-200/70">已完成 {estimatedCompleted} 分钟</p>
+        <p className="mt-2 text-xs text-emerald-100/80">剩余 {estimatedRemaining} 分钟</p>
       </div>
       <div className="rounded-2xl border border-violet-400/30 bg-violet-500/10 p-6">
-        <p className="text-xs text-violet-200/80">Reminder</p>
+        <p className="text-xs text-violet-200/80">学习提示</p>
         <p className="mt-2 text-sm text-violet-100">
-          Current workload ≈ {loadPercent ? `${loadPercent}%` : '--'} of today’s target. Adjust focus blocks if needed.
+          当前学习负荷约为今日目标的 {loadPercent ? `${loadPercent}%` : "--"}，如有需要可以调整学习时段。
         </p>
         <Button
           variant="outline"
@@ -361,7 +364,7 @@ const renderSummary = () => {
           onClick={() => void handleGeneratePlan()}
           disabled={isGenerating}
         >
-          {isGenerating ? 'Generating…' : 'Rebuild plan'}
+          {isGenerating ? '生成中...' : '重新生成计划'}
         </Button>
       </div>
     </div>
@@ -383,8 +386,8 @@ const renderTasks = () => {
   if (tasks.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-white/15 bg-white/5 p-8 text-center text-white/70">
-        <p className="text-lg">No study tasks scheduled for today</p>
-        <p className="mt-2 text-sm">Generate a plan or drop the next action from your learning goals.</p>
+        <p className="text-lg">今天暂无学习任务</p>
+        <p className="mt-2 text-sm">请生成学习计划，或从学习目标中拖入下一步行动。</p>
       </div>
     );
   }
@@ -409,8 +412,8 @@ const renderTasks = () => {
                 {renderStatusBadge(task.status)}
               </div>
               <p className="mt-2 text-sm text-white/70">
-                Estimated {task.estimatedMinutes} min
-                {task.actualMinutes > 0 && ` · Actual ${task.actualMinutes} min`}
+                预计用时 {task.estimatedMinutes} 分钟
+                {task.actualMinutes > 0 && `，实际 ${task.actualMinutes} 分钟`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -422,7 +425,7 @@ const renderTasks = () => {
                   onClick={() => handleStartTask(task.id)}
                   className="border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
                 >
-                  Start
+                  开始学习
                 </Button>
               )}
               {task.status !== 'completed' && (
@@ -432,7 +435,7 @@ const renderTasks = () => {
                   onClick={() => handleCompleteTask(task)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  Mark done
+                  标记完成
                 </Button>
               )}
               {task.status !== 'completed' && (
@@ -443,7 +446,7 @@ const renderTasks = () => {
                   onClick={() => handleSkipTask(task.id)}
                   className="border-amber-400/40 text-amber-200 hover:bg-amber-500/10"
                 >
-                  Skip today
+                  跳过今天
                 </Button>
               )}
               <Button
@@ -453,7 +456,7 @@ const renderTasks = () => {
                 onClick={() => handleSkipToTomorrow(task.id)}
                 className="border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/10"
               >
-                Move to tomorrow
+                移至明天
               </Button>
             </div>
           </div>
@@ -520,3 +523,8 @@ const renderTasks = () => {
     </div>
   );
 }
+
+
+
+
+

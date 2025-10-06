@@ -1,10 +1,9 @@
+import { NextRequest, NextResponse } from "next/server";
 
-import { NextRequest, NextResponse } from 'next/server';
+import { z } from "zod";
 
-import { z } from 'zod';
-
-import { getServerSession, supabaseAdmin } from '@/lib/supabase/server';
-import { generateDailyPlan } from '@/lib/planner/daily';
+import { getServerSession, supabaseAdmin } from "@/lib/supabase/server";
+import { generateDailyPlan } from "@/lib/planner/daily";
 
 const DEFAULT_DAILY_MINUTES = 240;
 const TOKYO_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -16,7 +15,7 @@ const bodySchema = z.object({
   dailyMinutes: z
     .union([z.number(), z.string()])
     .transform((value) => Number(value))
-    .refine((value) => Number.isFinite(value) && value > 0, 'dailyMinutes must be a positive number')
+    .refine((value) => Number.isFinite(value) && value > 0, "dailyMinutes must be a positive number")
     .optional(),
 });
 
@@ -26,15 +25,15 @@ const querySchema = z.object({
   dailyMinutes: z
     .union([z.number(), z.string()])
     .transform((value) => Number(value))
-    .refine((value) => Number.isFinite(value) && value > 0, 'dailyMinutes must be a positive number')
+    .refine((value) => Number.isFinite(value) && value > 0, "dailyMinutes must be a positive number")
     .optional(),
 });
 
 function formatTokyoDate(date: Date): string {
   const tokyo = new Date(date.getTime() + TOKYO_OFFSET_MS);
   const year = tokyo.getUTCFullYear();
-  const month = `${tokyo.getUTCMonth() + 1}`.padStart(2, '0');
-  const day = `${tokyo.getUTCDate()}`.padStart(2, '0');
+  const month = `${tokyo.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${tokyo.getUTCDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -45,10 +44,10 @@ function normalizeTask(task: any) {
 
   return {
     id: task.id,
-    topic: task.topic ?? task.title ?? '',
+    topic: task.topic ?? task.title ?? "",
     estimatedMinutes: Number(task.estimatedMinutes ?? task.estimated_minutes ?? 0),
     actualMinutes: Number(task.actualMinutes ?? task.actual_minutes ?? 0),
-    status: (task.status ?? 'pending') as 'pending' | 'in_progress' | 'completed' | 'skipped',
+    status: (task.status ?? "pending") as "pending" | "in_progress" | "completed" | "skipped",
     orderNum: task.orderNum ?? task.order_num ?? null,
   };
 }
@@ -65,7 +64,7 @@ function normalizePlan(plan: any) {
     date: dateValue ?? null,
     targetMinutes: Number(plan.targetMinutes ?? plan.target_minutes ?? 0),
     actualMinutes: Number(plan.actualMinutes ?? plan.actual_minutes ?? 0),
-    status: plan.status ?? 'draft',
+    status: plan.status ?? "draft",
     createdAt: plan.createdAt ?? plan.created_at ?? null,
     updatedAt: plan.updatedAt ?? plan.updated_at ?? null,
   };
@@ -80,9 +79,9 @@ function normalizeResponse(plan: any, tasks: any[] = []) {
 
 async function resolveTenantId(userId: string) {
   const { data, error } = await supabaseAdmin
-    .from('profiles')
-    .select('tenant_id')
-    .eq('id', userId)
+    .from("profiles")
+    .select("tenant_id")
+    .eq("id", userId)
     .single();
 
   if (error) {
@@ -92,16 +91,36 @@ async function resolveTenantId(userId: string) {
   return data?.tenant_id ?? null;
 }
 
+async function fetchPlanSnapshot(userId: string, tenantId: string, date: string) {
+  const { data, error } = await supabaseAdmin
+    .from("daily_plans")
+    .select("*, daily_tasks(*)")
+    .eq("user_id", userId)
+    .eq("tenant_id", tenantId)
+    .eq("date", date)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return normalizeResponse(data, data.daily_tasks ?? []);
+}
+
 export async function POST(request: NextRequest) {
+  let session: Awaited<ReturnType<typeof getServerSession>> | null = null;
+  let tenantId: string | null = null;
+  let targetDate: string | null = null;
+
   try {
-    const session = await getServerSession();
+    session = await getServerSession();
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const tenantId = await resolveTenantId(session.user.id);
+    tenantId = await resolveTenantId(session.user.id);
     if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant not found for user' }, { status: 400 });
+      return NextResponse.json({ error: "Tenant not found for user" }, { status: 400 });
     }
 
     const json = await request.json().catch(() => ({}));
@@ -112,40 +131,53 @@ export async function POST(request: NextRequest) {
     }
 
     const { planId, date, dailyMinutes } = parsed.data;
+    targetDate = date ?? formatTokyoDate(new Date());
 
     const result = await generateDailyPlan({
       userId: session.user.id,
       tenantId,
       planId: planId ?? null,
-      date: date ?? formatTokyoDate(new Date()),
+      date: targetDate,
       dailyMinutes: dailyMinutes ?? DEFAULT_DAILY_MINUTES,
     });
 
     const normalized = normalizeResponse(result.plan, result.tasks);
     return NextResponse.json(normalized);
   } catch (error) {
-    console.error('[daily/generate] POST error', error);
-    return NextResponse.json({ error: 'Failed to generate daily plan' }, { status: 500 });
+    console.error("[daily/generate] POST error", error);
+
+    if (session?.user && tenantId && targetDate) {
+      const fallback = await fetchPlanSnapshot(session.user.id, tenantId, targetDate);
+      if (fallback) {
+        return NextResponse.json(fallback);
+      }
+    }
+
+    return NextResponse.json({ error: "Failed to generate daily plan" }, { status: 500 });
   }
 }
 
 export async function GET(request: NextRequest) {
+  let session: Awaited<ReturnType<typeof getServerSession>> | null = null;
+  let tenantId: string | null = null;
+  let targetDate: string | null = null;
+
   try {
-    const session = await getServerSession();
+    session = await getServerSession();
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const tenantId = await resolveTenantId(session.user.id);
+    tenantId = await resolveTenantId(session.user.id);
     if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant not found for user' }, { status: 400 });
+      return NextResponse.json({ error: "Tenant not found for user" }, { status: 400 });
     }
 
     const url = new URL(request.url);
     const parsed = querySchema.safeParse({
-      planId: url.searchParams.get('planId') ?? undefined,
-      date: url.searchParams.get('date') ?? undefined,
-      dailyMinutes: url.searchParams.get('dailyMinutes') ?? undefined,
+      planId: url.searchParams.get("planId") ?? undefined,
+      date: url.searchParams.get("date") ?? undefined,
+      dailyMinutes: url.searchParams.get("dailyMinutes") ?? undefined,
     });
 
     if (!parsed.success) {
@@ -153,23 +185,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { planId, date, dailyMinutes } = parsed.data;
-    const targetDate = date ?? formatTokyoDate(new Date());
+    targetDate = date ?? formatTokyoDate(new Date());
 
-    const { data: existingPlan, error } = await supabaseAdmin
-      .from('daily_plans')
-      .select('*, daily_tasks(*)')
-      .eq('user_id', session.user.id)
-      .eq('tenant_id', tenantId)
-      .eq('date', targetDate)
-      .maybeSingle();
-
-    if (error) {
-      console.error('[daily/generate] GET fetch error', error);
-      return NextResponse.json({ error: 'Failed to load daily plan' }, { status: 500 });
-    }
-
-    if (existingPlan) {
-      return NextResponse.json(normalizeResponse(existingPlan, existingPlan.daily_tasks ?? []));
+    const fallbackPlan = await fetchPlanSnapshot(session.user.id, tenantId, targetDate);
+    if (fallbackPlan) {
+      return NextResponse.json(fallbackPlan);
     }
 
     const result = await generateDailyPlan({
@@ -182,7 +202,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(normalizeResponse(result.plan, result.tasks));
   } catch (error) {
-    console.error('[daily/generate] GET error', error);
-    return NextResponse.json({ error: 'Failed to retrieve daily plan' }, { status: 500 });
+    console.error("[daily/generate] GET error", error);
+
+    if (session?.user && tenantId && targetDate) {
+      const fallback = await fetchPlanSnapshot(session.user.id, tenantId, targetDate);
+      if (fallback) {
+        return NextResponse.json(fallback);
+      }
+    }
+
+    return NextResponse.json({ error: "Failed to retrieve daily plan" }, { status: 500 });
   }
 }

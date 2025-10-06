@@ -2,15 +2,26 @@
 
 import { ChangeEvent, FormEvent, useState, useTransition } from "react";
 
-import { 
-  getUserPermissions, 
-  hasPermission, 
-  canManageUser, 
-  canChangeRole, 
-  getRoleDisplayName, 
-  getRoleDescription,
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+import {
+  canChangeRole,
+  canManageUser,
   getAssignableRoles,
-  type UserRole 
+  getRoleDescription,
+  getRoleDisplayName,
+  hasPermission,
+  type UserRole,
 } from "@/lib/auth/permissions";
 
 type Member = {
@@ -32,14 +43,15 @@ type Props = {
   currentUserRole: UserRole;
 };
 
-type FieldErrors = Partial<Record<"name" | "email" | "password" | "username" | "avatarUrl", string>>;
+type FieldErrors = Partial<
+  Record<"name" | "email" | "password" | "username" | "avatarUrl", string>
+>;
 
 type AdminInviteFormProps = {
   onCreated: (member: Member) => void;
   setMessage: (message: string | null) => void;
   setError: (message: string | null) => void;
 };
-
 
 function toEditableMember(member: Member): EditableMember {
   return {
@@ -66,9 +78,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isSubmitting) {
-      return;
-    }
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
     setFieldErrors({});
@@ -96,7 +106,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
 
       if (!response.ok) {
         setFieldErrors(result?.fieldErrors ?? {});
-        setError(result?.message ?? "创建管理员失败，请稍后再试");
+        setError(result?.message ?? "创建成员失败，请稍后再试");
         return;
       }
 
@@ -105,108 +115,121 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
       }
 
       setMessage(result?.message ?? "管理员创建成功");
-      setFieldErrors({});
       setFormValues({ name: "", email: "", password: "", username: "" });
     } catch (error) {
-      console.error("[AdminInviteForm] submit failed", error);
-      setError("创建管理员失败，请稍后再试");
+      console.error("[AdminInviteForm] create member failed", error);
+      setError("创建成员失败，请稍后再试");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      noValidate
-      className="space-y-4 rounded-lg border border-white/10 bg-slate-900/60 p-4 text-white/85 shadow-sm"
-    >
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-white">创建新的管理员</p>
-          <p className="text-xs text-white/60">添加具有管理权限的成员，加入当前工作区。</p>
-        </div>
-        <span className="text-xs text-white/50">新账户将自动分配管理员角色</span>
-      </div>
+    <Card className="border-white/10 bg-slate-950/70 text-white shadow-[0_20px_50px_rgba(15,23,42,0.45)] backdrop-blur">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-lg font-semibold text-white">邀请新的管理员</CardTitle>
+        <CardDescription className="text-sm text-slate-200/80">
+          添加具有管理权限的成员，确保他们属于当前空间。
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="invite-name" className="text-sm text-slate-200">
+              姓名
+            </Label>
+            <Input
+              id="invite-name"
+              name="name"
+              value={formValues.name}
+              onChange={handleChange}
+              disabled={isSubmitting}
+              placeholder="例如：李同学"
+              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              required
+            />
+            {fieldErrors.name && (
+              <p className="text-xs text-rose-300/90">{fieldErrors.name}</p>
+            )}
+          </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col text-xs text-white/60">
-          姓名
-          <input
-            name="name"
-            value={formValues.name}
-            onChange={handleChange}
-            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-            placeholder="张三"
-            disabled={isSubmitting}
-            required
-          />
-          {fieldErrors.name && <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.name}</span>}
-        </label>
-        <label className="flex flex-col text-xs text-white/60">
-          用户名（可选）
-          <input
-            name="username"
-            value={formValues.username}
-            onChange={handleChange}
-            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-            placeholder="仅限字母、数字或下划线"
-            disabled={isSubmitting}
-          />
-          {fieldErrors.username && (
-            <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.username}</span>
-          )}
-        </label>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="invite-email" className="text-sm text-slate-200">
+              登录邮箱
+            </Label>
+            <Input
+              id="invite-email"
+              name="email"
+              type="email"
+              value={formValues.email}
+              onChange={handleChange}
+              disabled={isSubmitting}
+              placeholder="admin@example.com"
+              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              required
+            />
+            {fieldErrors.email && (
+              <p className="text-xs text-rose-300/90">{fieldErrors.email}</p>
+            )}
+          </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col text-xs text-white/60">
-          邮箱
-          <input
-            type="email"
-            name="email"
-            value={formValues.email}
-            onChange={handleChange}
-            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-            placeholder="name@example.com"
-            disabled={isSubmitting}
-            required
-          />
-          {fieldErrors.email && <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.email}</span>}
-        </label>
-        <label className="flex flex-col text-xs text-white/60">
-          初始密码
-          <input
-            type="password"
-            name="password"
-            value={formValues.password}
-            onChange={handleChange}
-            className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1.5 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-            placeholder="至少 8 位字符"
-            disabled={isSubmitting}
-            required
-          />
-          {fieldErrors.password && (
-            <span className="mt-1 text-xs text-rose-300/90">{fieldErrors.password}</span>
-          )}
-        </label>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="invite-password" className="text-sm text-slate-200">
+              临时密码
+            </Label>
+            <Input
+              id="invite-password"
+              name="password"
+              type="password"
+              value={formValues.password}
+              onChange={handleChange}
+              disabled={isSubmitting}
+              placeholder="至少 8 位"
+              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              required
+            />
+            {fieldErrors.password && (
+              <p className="text-xs text-rose-300/90">{fieldErrors.password}</p>
+            )}
+          </div>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="inline-flex items-center justify-center rounded border border-emerald-500/60 px-3 py-1.5 text-sm text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/30"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "正在创建..." : "创建管理员"}
-        </button>
-      </div>
-    </form>
+          <div className="space-y-2">
+            <Label htmlFor="invite-username" className="text-sm text-slate-200">
+              用户名（可选）
+            </Label>
+            <Input
+              id="invite-username"
+              name="username"
+              value={formValues.username}
+              onChange={handleChange}
+              disabled={isSubmitting}
+              placeholder="不填写将自动生成"
+              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+            />
+            {fieldErrors.username && (
+              <p className="text-xs text-rose-300/90">{fieldErrors.username}</p>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isSubmitting}
+            className="bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-600 text-white hover:from-sky-400 hover:via-indigo-400 hover:to-violet-500"
+          >
+            {isSubmitting ? "创建中..." : "创建管理员"}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }
 
 export function MemberManager({ initialMembers, currentUserId, currentUserRole }: Props) {
-    const [members, setMembers] = useState<EditableMember[]>(() => initialMembers.map(toEditableMember));
+  const [members, setMembers] = useState<EditableMember[]>(() =>
+    initialMembers.map(toEditableMember),
+  );
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -215,41 +238,53 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
     memberId: string,
     patch: Partial<Pick<EditableMember, "draftRole" | "draftFullName">>,
   ) => {
-    setMembers((prev) =>
-      prev.map((member) => (member.id === memberId ? { ...member, ...patch } : member)),
+    setMembers((previous) =>
+      previous.map((member) =>
+        member.id === memberId ? { ...member, ...patch } : member,
+      ),
     );
   };
 
   const handleMemberCreated = (member: Member) => {
-    setMembers((prev) => {
-      const next = [...prev, toEditableMember(member)];
-      return next.sort((a, b) => a.username.localeCompare(b.username));
-    });
+    setMembers((previous) => [toEditableMember(member), ...previous]);
+    setMessage("成员已添加");
+    setError(null);
   };
 
   const handleSave = (memberId: string) => {
-    const target = members.find((member) => member.id === memberId);
-    if (!target) {
+    const member = members.find((item) => item.id === memberId);
+    if (!member) return;
+
+    const updates: Partial<Member> = {};
+    const trimmedName = member.draftFullName.trim();
+
+    const hasRoleChange = member.draftRole !== member.role;
+    const hasNameChange = (trimmedName || "") !== ((member.full_name ?? "").trim() || "");
+
+    if (!hasRoleChange && !hasNameChange) {
+      setMessage(null);
       return;
     }
 
-    const updates: { role?: Member["role"]; fullName?: string | null } = {};
-    if (target.draftRole !== target.role) {
-      updates.role = target.draftRole;
+    if (hasRoleChange && !hasPermission(currentUserRole, "canChangeUserRoles")) {
+      setError("当前账号没有权限调整角色");
+      return;
     }
 
-    const normalizedFullName = target.draftFullName.trim();
-    if ((target.full_name ?? "") !== normalizedFullName) {
-      updates.fullName = normalizedFullName.length > 0 ? normalizedFullName : null;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      setMessage("Nothing to update");
+    if (hasRoleChange && !canChangeRole(currentUserRole, member.role, member.draftRole)) {
+      setError("当前账号没有权限调整到该角色");
       return;
     }
 
     setError(null);
     setMessage(null);
+
+    if (hasRoleChange) {
+      updates.role = member.draftRole;
+    }
+    if (hasNameChange) {
+      updates.full_name = trimmedName;
+    }
 
     startTransition(async () => {
       const response = await fetch(`/api/admin/members/${memberId}`, {
@@ -260,32 +295,49 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-        setError(payload?.message ?? "Update failed, please try again later");
+        setError(payload?.message ?? "更新失败，请稍后再试");
         return;
       }
 
       const payload = (await response.json()) as { member: Member };
-      setMembers((prev) =>
-        prev.map((member) =>
-          member.id === memberId
+      setMembers((previous) =>
+        previous.map((item) =>
+          item.id === memberId
             ? {
-                ...member,
+                ...item,
                 ...payload.member,
                 draftRole: payload.member.role,
                 draftFullName: payload.member.full_name ?? "",
               }
-            : member,
+            : item,
         ),
       );
-      setMessage("Member updated");
+      setMessage("成员信息已更新");
     });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminInviteForm onCreated={handleMemberCreated} setMessage={setMessage} setError={setError} />
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      {message && <p className="text-sm text-emerald-300">{message}</p>}
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-lg border border-rose-500/50 bg-rose-500/10 px-4 py-2 text-sm text-rose-200"
+        >
+          {error}
+        </div>
+      )}
+
+      {message && (
+        <div
+          role="status"
+          className="rounded-lg border border-emerald-400/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200"
+        >
+          {message}
+        </div>
+      )}
+
       <ul className="space-y-4">
         {members.map((member) => {
           const isSelf = member.id === currentUserId;
@@ -293,79 +345,96 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
             member.draftRole !== member.role ||
             (member.draftFullName.trim() || "") !== ((member.full_name ?? "").trim() || "");
 
+          const roleBadgeClass =
+            member.role === "admin"
+              ? "bg-red-500/20 text-red-200"
+              : member.role === "editor"
+              ? "bg-sky-500/20 text-sky-200"
+              : member.role === "user"
+              ? "bg-emerald-500/20 text-emerald-200"
+              : "bg-slate-500/20 text-slate-200";
+
           return (
-            <li
-              key={member.id}
-              className="rounded-lg border border-white/10 bg-slate-900/60 p-4 text-white/85 shadow-sm"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-base font-semibold text-white">
-                    {member.full_name || member.username}
-                    {isSelf && <span className="ml-2 text-xs text-emerald-300">(您)</span>}
-                  </p>
-                  <p className="text-xs text-white/60">@{member.username}</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      member.role === 'admin' ? 'bg-red-500/20 text-red-300' :
-                      member.role === 'editor' ? 'bg-blue-500/20 text-blue-300' :
-                      member.role === 'user' ? 'bg-green-500/20 text-green-300' :
-                      'bg-gray-500/20 text-gray-300'
-                    }`}>
-                      {getRoleDisplayName(member.role)}
-                    </span>
+            <li key={member.id}>
+              <Card className="border-white/10 bg-slate-950/60 text-white shadow-[0_18px_45px_rgba(15,23,42,0.35)]">
+                <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2 text-base font-semibold text-white">
+                      <span>{member.full_name || member.username}</span>
+                      {isSelf && <span className="text-xs text-emerald-300">(我)</span>}
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${roleBadgeClass}`}>
+                        {getRoleDisplayName(member.role)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/60">@{member.username}</p>
+                    <p className="text-xs text-white/50">{getRoleDescription(member.role)}</p>
                   </div>
-                  <p className="text-xs text-white/50">{getRoleDescription(member.role)}</p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <label className="flex flex-col text-xs text-white/60">
-                    Display name
-                    <input
-                      value={member.draftFullName}
-                      onChange={(event) =>
-                        handleDraftChange(member.id, { draftFullName: event.target.value })
-                      }
-                      className="mt-1 w-52 rounded border border-white/15 bg-slate-950/70 px-2 py-1 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-                      placeholder="Not set"
-                      disabled={isPending}
-                    />
-                  </label>
-                  <label className="flex flex-col text-xs text-white/60">
-                    Role
-                    <select
-                      value={member.draftRole}
-                      onChange={(event) =>
-                        handleDraftChange(member.id, {
-                          draftRole: event.target.value as Member["role"],
-                        })
-                      }
-                      className="mt-1 rounded border border-white/15 bg-slate-950/70 px-2 py-1 text-sm text-white focus:border-emerald-400/60 focus:outline-none"
-                      disabled={isSelf || isPending || !canManageUser(currentUserRole, member.role)}
-                      title={!canManageUser(currentUserRole, member.role) ? "您没有权限修改此用户的角色" : ""}
+
+                  <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-slate-200" htmlFor={`display-name-${member.id}`}>
+                        展示名称
+                      </Label>
+                      <Input
+                        id={`display-name-${member.id}`}
+                        value={member.draftFullName}
+                        onChange={(event) =>
+                          handleDraftChange(member.id, { draftFullName: event.target.value })
+                        }
+                        disabled={isPending}
+                        placeholder="未填写"
+                        className="h-10 w-56 border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs text-slate-200" htmlFor={`role-${member.id}`}>
+                        角色
+                      </Label>
+                      <select
+                        id={`role-${member.id}`}
+                        value={member.draftRole}
+                        onChange={(event) =>
+                          handleDraftChange(member.id, {
+                            draftRole: event.target.value as Member["role"],
+                          })
+                        }
+                        disabled={
+                          isSelf ||
+                          isPending ||
+                          !canManageUser(currentUserRole, member.role)
+                        }
+                        className="h-10 min-w-[8rem] rounded-lg border border-white/15 bg-slate-900/70 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60"
+                      >
+                        {getAssignableRoles(currentUserRole).map((role) => (
+                          <option key={role} value={role}>
+                            {getRoleDisplayName(role)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSave(member.id)}
+                      disabled={isPending || !hasChanges}
+                      className="border-emerald-400/60 text-emerald-200 hover:bg-emerald-500/15 disabled:border-white/15 disabled:text-white/30"
                     >
-                      {getAssignableRoles(currentUserRole).map((role) => (
-                        <option key={role} value={role}>
-                          {getRoleDisplayName(role)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => handleSave(member.id)}
-                    className="inline-flex items-center justify-center rounded border border-emerald-500/60 px-3 py-1 text-sm text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/30"
-                    disabled={isPending || !hasChanges}
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
+                      保存
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </li>
           );
         })}
         {members.length === 0 && (
-          <li className="rounded-lg border border-white/10 bg-slate-900/60 p-4 text-sm text-white/60">
-            No members yet
+          <li>
+            <Card className="border-dashed border-white/10 bg-slate-950/50 text-white">
+              <CardContent className="py-6 text-sm text-white/60">还没有成员，邀请第一位管理员吧。</CardContent>
+            </Card>
           </li>
         )}
       </ul>

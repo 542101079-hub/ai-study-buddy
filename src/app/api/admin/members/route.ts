@@ -1,30 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, getServerSession } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/server";
+import { withAdminRoute } from "@/lib/auth/server-guards";
 import { createProfileWithUniqueUsername, normalizeBaseUsername } from "@/lib/auth/register";
 import { formatValidationErrors, registerSchema } from "@/lib/auth/validation";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = withAdminRoute(async (_request, _context, { profile }) => {
   try {
-    const session = await getServerSession();
-    
-    if (!session) {
-      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
-    }
-
-    // 使用service role获取当前用户profile
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("id, role, tenant_id")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    if (profile.role !== "admin") {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
 
-    // 使用service role获取成员列表
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("id, username, full_name, avatar_url, role")
@@ -41,24 +28,11 @@ export async function GET() {
     console.error("[api/admin/members] GET unexpected error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAdminRoute(async (request: NextRequest, _context, { profile }) => {
   try {
-    const session = await getServerSession();
-    
-    if (!session) {
-      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
-    }
-
-    // 使用service role获取当前用户profile
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("id, role, tenant_id")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!profile || profile.role !== "admin") {
+    if (profile.role !== "admin") {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
 
@@ -66,7 +40,7 @@ export async function POST(request: NextRequest) {
     try {
       payload = await request.json();
     } catch {
-      return NextResponse.json({ message: "无法读取提交数据" }, { status: 400 });
+      return NextResponse.json({ message: "�޷���ȡ�ύ����" }, { status: 400 });
     }
 
     const parsed = registerSchema.safeParse(payload);
@@ -74,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         {
-          message: "注册信息有误",
+          message: "ע����Ϣ����",
           fieldErrors: formatValidationErrors(parsed.error),
         },
         { status: 400 },
@@ -82,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, password, username: providedUsername, avatarUrl } = parsed.data;
-    const role: 'admin' = 'admin';
+    const role: "admin" = "admin";
 
     const { data: createUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -98,8 +72,8 @@ export async function POST(request: NextRequest) {
       if (status === 422 || status === 409) {
         return NextResponse.json(
           {
-            message: "邮箱已被使用",
-            fieldErrors: { email: "请使用新的邮箱" },
+            message: "�����ѱ�ʹ��",
+            fieldErrors: { email: "��ʹ���µ�����" },
           },
           { status: 409 },
         );
@@ -107,7 +81,7 @@ export async function POST(request: NextRequest) {
 
       console.error("[api/admin/members] createUser failed", createUserError);
       return NextResponse.json(
-        { message: "创建管理员失败，请稍后再试" },
+        { message: "��������Աʧ�ܣ����Ժ�����" },
         { status: 500 },
       );
     }
@@ -115,7 +89,7 @@ export async function POST(request: NextRequest) {
     const user = createUserData.user;
     if (!user) {
       return NextResponse.json(
-        { message: "创建管理员失败，请稍后再试" },
+        { message: "��������Աʧ�ܣ����Ժ�����" },
         { status: 500 },
       );
     }
@@ -136,8 +110,8 @@ export async function POST(request: NextRequest) {
       if ((profileError as { code?: string } | null)?.code === "23505") {
         return NextResponse.json(
           {
-            message: "用户名已被使用",
-            fieldErrors: { username: "该用户名已被占用，请换一个" },
+            message: "�û����ѱ�ʹ��",
+            fieldErrors: { username: "���û����ѱ�ռ�ã��뻻һ��" },
           },
           { status: 409 },
         );
@@ -145,14 +119,14 @@ export async function POST(request: NextRequest) {
 
       console.error("[api/admin/members] insertProfile failed", profileError);
       return NextResponse.json(
-        { message: "创建管理员失败，请稍后再试" },
+        { message: "��������Աʧ�ܣ����Ժ�����" },
         { status: 500 },
       );
     }
 
     return NextResponse.json(
       {
-        message: "管理员创建成功",
+        message: "����Ա�����ɹ�",
         member: memberProfile,
       },
       { status: 201 },
@@ -160,8 +134,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[api/admin/members] POST unexpected error:", error);
     return NextResponse.json(
-      { message: "创建管理员失败，请稍后再试" },
+      { message: "��������Աʧ�ܣ����Ժ�����" },
       { status: 500 },
     );
   }
-}
+});

@@ -25,7 +25,7 @@ vi.mock("@/lib/auth/register", () => ({
   normalizeBaseUsername: normalizeBaseUsernameMock,
 }));
 
-vi.mock("@/lib/auth/permissions", () => ({
+vi.mock("@/lib/auth/server-guards", () => ({
   withAdminRoute: (handler: any) => handler,
 }));
 

@@ -11,5 +11,23 @@ a {
 
 body {
   margin: 0;
-  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family:
+    "Noto Sans SC",
+    "PingFang SC",
+    "Microsoft YaHei",
+    "WenQuanYi Micro Hei",
+    "Heiti SC",
+    "SimHei",
+    var(--font-geist-sans),
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
 }
