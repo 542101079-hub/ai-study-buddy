@@ -135,14 +135,13 @@ export function LearningDashboard() {
   };
 
   const getDifficultyColor = (difficulty: number) => {
-    switch (difficulty) {
-      case 1: return 'text-green-400';
-      case 2: return 'text-blue-400';
-      case 3: return 'text-yellow-400';
-      case 4: return 'text-orange-400';
-      case 5: return 'text-red-400';
-      default: return 'text-gray-400';
-    }
+    const value = Number.isFinite(difficulty) ? difficulty : 0;
+    if (value <= 0) return 'text-gray-400';
+    if (value <= 2) return 'text-green-400';
+    if (value <= 4) return 'text-blue-400';
+    if (value <= 6) return 'text-yellow-400';
+    if (value <= 8) return 'text-orange-400';
+    return 'text-red-400';
   };
 
   const getTypeIcon = (type: string) => {
@@ -333,7 +332,7 @@ export function LearningDashboard() {
                       <h4 className="text-white font-medium">{task.title}</h4>
                       {getStatusBadge(task.status)}
                       <span className={`text-xs font-medium ${getDifficultyColor(task.difficulty)}`}>
-                        难度 {task.difficulty}/5
+                        难度 {task.difficulty}/10
                       </span>
                     </div>
                     
@@ -448,4 +447,3 @@ export function LearningDashboard() {
     </div>
   );
 }
-

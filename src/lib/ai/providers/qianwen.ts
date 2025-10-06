@@ -225,7 +225,7 @@ ${JSON.stringify(data, null, 2)}
 **学习偏好**：
 - 每日学习时间：${input.preferences.daily_time_minutes}分钟
 - 每周学习天数：${input.preferences.weekly_goal}天
-- 难度偏好：${input.preferences.difficulty_level}/5
+- 难度偏好：${input.preferences.difficulty_level}/10
 - 学习时间：${input.preferences.preferred_time === 'morning' ? '上午' : input.preferences.preferred_time === 'afternoon' ? '下午' : '晚上'}
 - 学习风格：${input.preferences.learning_style === 'visual' ? '视觉学习' : input.preferences.learning_style === 'auditory' ? '听觉学习' : input.preferences.learning_style === 'kinesthetic' ? '动手学习' : '混合学习'}
 

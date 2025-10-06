@@ -291,7 +291,7 @@ export default async function LearningPlansPage({
                                                 )}
                                                 {typeof task.difficulty === 'number' && (
                                                   <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1">
-                                                    难度：{task.difficulty}/5
+                                                    难度：{task.difficulty}/10
                                                   </span>
                                                 )}
                                                 {typeof task.estimated_minutes === 'number' && (
@@ -362,3 +362,4 @@ export default async function LearningPlansPage({
     </div>
   );
 }
+
