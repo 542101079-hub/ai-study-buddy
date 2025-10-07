@@ -1,14 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { message as antdMessage } from "antd";
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { Database } from "@/db/types";
+
+import { ChatMessageItem } from "./chat-message-item";
 
 type AssistantSession = Database["public"]["Tables"]["assistant_sessions"]["Row"];
 type AssistantMessageRow = Database["public"]["Tables"]["assistant_messages"]["Row"];
@@ -80,6 +89,17 @@ function normalizeMessage(row: AssistantMessageRow): AssistantMessage {
   };
 }
 
+function initialsFromName(name?: string | null) {
+  if (!name) return "AI";
+  const trimmed = name.trim();
+  if (!trimmed) return "AI";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 export function AssistantClient({ tenant, initialSessionId }: AssistantClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -94,11 +114,15 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
     initialSessionId ?? null,
   );
   const [input, setInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [sending, setSending] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [lastUserQuestion, setLastUserQuestion] = useState<string | null>(null);
 
-  const sessionCount = sessions.length;
+  const messageContainerRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const tenantName = tenant?.name ?? "AI 学习搭子";
+  const tenantTagline = tenant?.tagline ?? "围绕你的学习路径，精准辅助每一步";
 
   const updateQueryString = useCallback(
     (sessionId: string | null) => {
@@ -115,10 +139,9 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
       }
 
       const queryString = params.toString();
-      router.replace(
-        queryString ? `${pathname}?${queryString}` : pathname,
-        { scroll: false },
-      );
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+        scroll: false,
+      });
     },
     [pathname, router, searchParams],
   );
@@ -168,49 +191,60 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
   }, [loadSessions]);
 
   useEffect(() => {
-    if (sessionsLoading) {
-      return;
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      const nextHeight = Math.min(textareaRef.current.scrollHeight, 200);
+      textareaRef.current.style.height = `${nextHeight}px`;
     }
+  }, [input]);
 
-    if (!selectedSessionId) {
-      const querySession = searchParams.get("s");
-      if (querySession && sessions.some((s) => s.id === querySession)) {
-        setSelectedSessionId(querySession);
-        return;
-      }
-
-      const mostRecent = sessions[0]?.id ?? null;
-      if (mostRecent) {
-        setSelectedSessionId(mostRecent);
-        updateQueryString(mostRecent);
-      }
-    } else {
-      const exists = sessions.some((session) => session.id === selectedSessionId);
-      if (!exists) {
+  useEffect(() => {
+    if (!sessionsLoading) {
+      if (!selectedSessionId && sessions.length > 0) {
+        const fallbackId =
+          initialSessionId && sessions.some((session) => session.id === initialSessionId)
+            ? initialSessionId
+            : sessions[0]?.id ?? null;
+        if (fallbackId) {
+          setSelectedSessionId(fallbackId);
+          updateQueryString(fallbackId);
+        }
+      } else if (
+        selectedSessionId &&
+        !sessions.some((session) => session.id === selectedSessionId)
+      ) {
         setSelectedSessionId(null);
         updateQueryString(null);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions, sessionsLoading]);
+  }, [
+    sessions,
+    sessionsLoading,
+    selectedSessionId,
+    updateQueryString,
+    initialSessionId,
+  ]);
 
   useEffect(() => {
     if (!selectedSessionId) {
       setMessages([]);
       return;
     }
-
     updateQueryString(selectedSessionId);
     void loadMessages(selectedSessionId);
   }, [selectedSessionId, loadMessages, updateQueryString]);
+
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+    }
+  }, [messages, messagesLoading]);
 
   const handleCreateSession = useCallback(async () => {
     try {
       const res = await fetch("/api/assistant/sessions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
       if (!res.ok) {
@@ -221,7 +255,6 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
       if (session) {
         setSessions((prev) => [session, ...prev]);
         setSelectedSessionId(session.id);
-        setSidebarOpen(false);
         messageApi.success("已创建新的对话。");
       }
     } catch (error) {
@@ -231,20 +264,20 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
   }, [messageApi]);
 
   const handleRenameSession = useCallback(
-    async (sessionId: string, title: string) => {
-      try {
-        const trimmed = title.trim();
-        if (!trimmed) {
-          messageApi.warning("标题不能为空。");
-          return;
-        }
+    async (sessionId: string) => {
+      const target = sessions.find((session) => session.id === sessionId);
+      if (!target) return;
 
+      const newTitle = prompt("输入新的对话标题", target.title);
+      if (!newTitle || newTitle.trim() === target.title) {
+        return;
+      }
+
+      try {
         const res = await fetch(`/api/assistant/sessions/${sessionId}`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ title: trimmed }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle.trim() }),
         });
         if (!res.ok) {
           throw new Error("failed");
@@ -262,11 +295,17 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
         messageApi.error("重命名失败，请稍后再试。");
       }
     },
-    [messageApi],
+    [messageApi, sessions],
   );
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
+      const target = sessions.find((session) => session.id === sessionId);
+      if (!target) return;
+
+      const confirmed = confirm(`确定要删除「${target.title}」这段对话吗？`);
+      if (!confirmed) return;
+
       try {
         const res = await fetch(`/api/assistant/sessions/${sessionId}`, {
           method: "DELETE",
@@ -284,7 +323,20 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
         messageApi.error("删除对话失败，请稍后再试。");
       }
     },
-    [messageApi, selectedSessionId],
+    [messageApi, selectedSessionId, sessions],
+  );
+
+  const filteredSessions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return sessions;
+    return sessions.filter((session) =>
+      session.title.toLowerCase().includes(term),
+    );
+  }, [sessions, searchTerm]);
+
+  const activeSession = useMemo(
+    () => sessions.find((session) => session.id === selectedSessionId) ?? null,
+    [sessions, selectedSessionId],
   );
 
   const sendMessage = useCallback(
@@ -300,27 +352,20 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
         return;
       }
 
-      const displayText = options?.followUp
-        ? `${trimmed}\n\n（我还没完全理解，请换个角度说明。）`
-        : trimmed;
-
       const optimisticId = `temp-${Date.now()}`;
       const optimisticMessage: AssistantMessage = {
         id: optimisticId,
-        tenant_id: "",
+        tenant_id: activeSession?.tenant_id ?? "",
         session_id: targetSessionId,
         user_id: "",
         role: "user",
-        content: { text: displayText },
+        content: { text: trimmed },
         tokens: null,
         created_at: new Date().toISOString(),
         order_num: Number.MAX_SAFE_INTEGER,
       };
 
       setMessages((prev) => [...prev, optimisticMessage]);
-      if (!options?.followUp) {
-        setLastUserQuestion(trimmed);
-      }
       setSending(true);
 
       try {
@@ -340,16 +385,26 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
 
         await loadMessages(targetSessionId);
         await loadSessions();
+        if (!options?.followUp) {
+          setLastUserQuestion(trimmed);
+        }
       } catch (error) {
         console.error("[assistant] send message failed", error);
-        setMessages((prev) => prev.filter((message) => message.id !== optimisticId));
         messageApi.error("发送失败，请稍后再试。");
+        setMessages((prev) => prev.filter((message) => message.id !== optimisticId));
       } finally {
         setSending(false);
         setInput("");
       }
     },
-    [selectedSessionId, sending, messageApi, loadMessages, loadSessions],
+    [
+      selectedSessionId,
+      sending,
+      messageApi,
+      loadMessages,
+      loadSessions,
+      activeSession?.tenant_id,
+    ],
   );
 
   const handleSubmit = useCallback(
@@ -360,355 +415,271 @@ export function AssistantClient({ tenant, initialSessionId }: AssistantClientPro
     [input, sendMessage],
   );
 
+  const handleTextareaKeyDown = useCallback(
+    async (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        await sendMessage(input);
+      }
+    },
+    [input, sendMessage],
+  );
+
   const handleFollowUp = useCallback(async () => {
     const question = lastUserQuestion ?? "我还没懂，请换个角度再解释。";
     await sendMessage(question, { followUp: true });
   }, [lastUserQuestion, sendMessage]);
 
-  const currentSession = useMemo(
-    () => sessions.find((session) => session.id === selectedSessionId) ?? null,
-    [sessions, selectedSessionId],
-  );
+  const sessionListContent = () => {
+    if (sessionsLoading) {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-12 w-full animate-pulse rounded-xl bg-white/5"
+            />
+          ))}
+        </div>
+      );
+    }
 
-  const headerTitle = tenant?.name ?? "AI 学习搭子";
-  const headerTagline = tenant?.tagline ?? "与你同行的智能学习助教";
+    if (filteredSessions.length === 0) {
+      return (
+        <Card className="border border-dashed border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
+          {sessions.length === 0
+            ? "还没有任何对话，点击「新建对话」开始提问吧。"
+            : "没有匹配的对话，换个关键词试试。"}
+        </Card>
+      );
+    }
 
-  return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-50">
-      {contextHolder}
+    return (
+      <div className="space-y-2">
+        {filteredSessions.map((session) => {
+          const isActive = session.id === selectedSessionId;
+          const label = tokyoFormatter.format(new Date(session.updated_at));
 
-      <div className="pointer-events-none absolute inset-0 -z-10 blur-[180px] opacity-60">
-        <div className="absolute left-[20%] top-10 h-56 w-56 rounded-full bg-purple-700/30" />
-        <div className="absolute right-[25%] top-[40%] h-64 w-64 rounded-full bg-violet-500/25" />
-        <div className="absolute left-[10%] bottom-[20%] h-60 w-60 rounded-full bg-indigo-600/20" />
-      </div>
-
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-10 lg:flex-row lg:px-10">
-        <aside
-          className={[
-            "fixed inset-y-0 left-0 z-40 flex w-full flex-col bg-slate-950/95 px-4 pb-6 pt-24 shadow-2xl transition-transform duration-200 lg:static lg:w-80 lg:px-0 lg:pb-0 lg:pt-0 lg:shadow-none",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          ].join(" ")}
-        >
-          <div className="flex items-center justify-between px-2 pb-4 lg:hidden">
-            <h2 className="text-lg font-semibold text-white/90">历史对话</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white/70 hover:text-white"
-              onClick={() => setSidebarOpen(false)}
+          return (
+            <div
+              key={session.id}
+              className="flex items-center gap-2"
             >
-              关闭
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between px-2 pb-3 lg:px-6">
-            <div>
-              <p className="text-sm text-white/60">对话列表</p>
-              <h3 className="text-xl font-semibold text-white">
-                共 {sessionCount} 条
-              </h3>
-            </div>
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg hover:from-violet-500 hover:to-purple-500"
-              onClick={handleCreateSession}
-            >
-              新建对话
-            </Button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-2 lg:px-4">
-            {sessionsLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-16 animate-pulse rounded-xl bg-white/5"
-                  />
-                ))}
-              </div>
-            ) : sessionCount === 0 ? (
-              <Card className="border border-dashed border-violet-500/40 bg-white/5 p-4 text-sm text-white/70 backdrop-blur">
-                <p>还没有任何对话，点击「新建对话」开始向学习搭子提问吧！</p>
-              </Card>
-            ) : (
-              <div className="space-y-2">
-                {sessions.map((session) => {
-                  const isActive = session.id === selectedSessionId;
-                  return (
-                    <div
-                      key={session.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setSelectedSessionId(session.id);
-                        setSidebarOpen(false);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          setSelectedSessionId(session.id);
-                          setSidebarOpen(false);
-                        }
-                      }}
-                      className={[
-                        "w-full cursor-pointer rounded-xl border px-4 py-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/60",
-                        isActive
-                          ? "border-violet-400/70 bg-violet-500/20 text-white shadow-lg"
-                          : "border-white/10 bg-white/5 text-white/70 hover:border-violet-500/40 hover:bg-violet-500/10 hover:text-white",
-                      ].join(" ")}
-                    >
-                      <p className="line-clamp-1 text-sm font-semibold">
-                        {session.title}
-                      </p>
-                      <p className="mt-1 text-xs text-white/50">
-                        {tokyoFormatter.format(new Date(session.updated_at))}
-                      </p>
-                      <div className="mt-3 flex gap-2 text-xs">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-white/10 bg-black/20 text-white/60 hover:text-white"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            const newTitle = prompt("输入新的对话标题", session.title);
-                            if (newTitle && newTitle !== session.title) {
-                              void handleRenameSession(session.id, newTitle);
-                            }
-                          }}
-                        >
-                          重命名
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-white/10 bg-black/20 text-white/60 hover:text-white"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            const confirmed = confirm("确定要删除这段对话吗？");
-                            if (confirmed) {
-                              void handleDeleteSession(session.id);
-                            }
-                          }}
-                        >
-                          删除
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </aside>
-
-        <main className="flex w-full flex-1 flex-col gap-6">
-          <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-semibold text-white">{headerTitle}</h1>
-                <p className="mt-2 text-sm text-white/60">{headerTagline}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg hover:from-violet-500 hover:to-purple-500"
-                  onClick={handleCreateSession}
-                >
-                  新建对话
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-violet-400/40 text-violet-200 hover:bg-violet-500/10 lg:hidden"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  浏览历史
-                </Button>
-              </div>
-            </div>
-            {currentSession && (
-              <p className="text-xs text-white/60">
-                当前会话更新时间：{tokyoFormatter.format(new Date(currentSession.updated_at))}
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-1 flex-col gap-6 lg:flex-row">
-            <section className="flex flex-1 flex-col rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <div className="flex items-center justify-between px-2 pb-3">
-                <h2 className="text-lg font-semibold text-white">对话窗口</h2>
+              <button
+                type="button"
+                onClick={() => setSelectedSessionId(session.id)}
+                className={[
+                  "w-full rounded-xl border border-white/10 bg-slate-900/40 p-3 text-left transition flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-violet-400/40",
+                  isActive
+                    ? "border-violet-400/40 bg-violet-600/15 text-slate-100"
+                    : "hover:bg-white/5 text-slate-200",
+                ].join(" ")}
+              >
+                <span className="line-clamp-1 text-sm">{session.title}</span>
+                <span className="ml-auto text-xs text-slate-500">{label}</span>
+              </button>
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-violet-400/50 text-violet-200 hover:bg-violet-500/10"
-                  disabled={!lastUserQuestion || sending || !selectedSessionId}
-                  onClick={() => void handleFollowUp()}
+                  className="h-9 border-white/10 bg-slate-950/50 text-xs text-slate-300 hover:bg-white/5 hover:text-slate-100"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleRenameSession(session.id);
+                  }}
                 >
-                  还没懂？
+                  重命名
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 border-white/10 bg-slate-950/50 text-xs text-slate-300 hover:bg-white/5 hover:text-rose-300"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleDeleteSession(session.id);
+                  }}
+                >
+                  删除
                 </Button>
               </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
-              <div className="flex-1 overflow-hidden rounded-2xl border border-white/5 bg-black/20">
-                <div className="h-full max-h-[520px] space-y-4 overflow-y-auto px-4 py-6 lg:max-h-[620px]">
-                  {messagesLoading ? (
-                    <div className="space-y-4">
-                      {Array.from({ length: 4 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className="flex gap-3"
-                        >
-                          <div className="h-10 w-10 animate-pulse rounded-full bg-white/10" />
-                          <div className="flex-1 space-y-3">
-                            <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/10" />
-                            <div className="h-4 w-1/2 animate-pulse rounded-full bg-white/10" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="flex h-full flex-col items-center justify-center gap-4 text-center text-white/60">
-                      <p className="text-lg font-semibold text-white/80">
-                        还没有任何消息
-                      </p>
-                      <p className="max-w-sm text-sm">
-                        提问任何学习上的难点、考试准备、或学习计划问题，AI 学习搭子会以清晰的结构化答案回复你。
-                      </p>
-                      <Button
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg hover:from-violet-500 hover:to-purple-500"
-                        onClick={() => {
-                          if (!selectedSessionId) {
-                            void handleCreateSession();
-                          }
-                        }}
-                      >
-                        开始第一个问题
-                      </Button>
-                    </div>
-                  ) : (
-                    messages.map((message) => {
-                      const isUser = message.role === "user";
-                      const displayTime = tokyoFormatter.format(new Date(message.created_at));
-                      return (
-                        <div
-                          key={message.id}
-                          className={[
-                            "flex w-full gap-3",
-                            isUser ? "justify-end" : "justify-start",
-                          ].join(" ")}
-                        >
-                          {!isUser && (
-                            <Avatar className="h-10 w-10 shrink-0 bg-violet-600 text-white/90">
-                              搭
-                            </Avatar>
-                          )}
-                          <div
-                            className={[
-                              "max-w-[82%] rounded-2xl border px-4 py-3 shadow-lg transition-all",
-                              isUser
-                                ? "border-violet-400/60 bg-gradient-to-r from-violet-600 to-purple-600 text-white"
-                                : "border-white/10 bg-white/10 text-white/80",
-                            ].join(" ")}
-                          >
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                              {message.content.text || "（空消息）"}
-                            </p>
-                            <p
-                              className={[
-                                "mt-3 text-xs",
-                                isUser ? "text-white/70" : "text-white/50",
-                              ].join(" ")}
-                            >
-                              {displayTime}
-                            </p>
-                            {message.role === "assistant" && (
-                              <div className="mt-4 rounded-xl border border-white/5 bg-black/10 p-3">
-                                <p className="text-xs font-semibold text-white/70">
-                                  来源 / 参考资料
-                                </p>
-                                {message.content.citations &&
-                                message.content.citations.length > 0 ? (
-                                  <ul className="mt-2 space-y-2 text-xs text-white/60">
-                                    {message.content.citations.map((citation, index) => (
-                                      <li key={`${message.id}-citation-${index}`}>
-                                        {citation.url ? (
-                                          <a
-                                            href={citation.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-violet-300 hover:text-violet-200"
-                                          >
-                                            {citation.title}
-                                          </a>
-                                        ) : (
-                                          <span>{citation.title}</span>
-                                        )}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="mt-2 text-xs text-white/40">暂无参考资料</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          {isUser && (
-                            <Avatar className="h-10 w-10 shrink-0 bg-indigo-600 text-white/90">
-                              我
-                            </Avatar>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+  const chatContent = () => {
+    if (messagesLoading) {
+      return (
+        <div className="space-y-4 text-slate-500">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-20 animate-pulse rounded-2xl border border-white/10 bg-slate-800/40"
+            />
+          ))}
+        </div>
+      );
+    }
+
+    if (messages.length === 0) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center text-center text-slate-500">
+          <p className="text-base font-medium text-slate-300">还没有任何消息</p>
+          <p className="mt-2 max-w-md text-sm">
+            提问学习上的疑惑、备考策略或学习计划，我会以结构化的答案给你灵感。
+          </p>
+          <Button
+            className="mt-5 bg-violet-600 text-white hover:bg-violet-500"
+            onClick={() => void handleCreateSession()}
+          >
+            新建对话
+          </Button>
+        </div>
+      );
+    }
+
+    return messages.map((message) => {
+      const timestamp = tokyoFormatter.format(new Date(message.created_at));
+      return (
+        <ChatMessageItem
+          key={message.id}
+          message={message}
+          timestamp={timestamp}
+        />
+      );
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-[#0e0b1a] to-[#141129]">
+      {contextHolder}
+      <div className="container mx-auto grid max-w-7xl grid-cols-12 gap-6 px-4 py-6">
+        <div className="col-span-12 md:col-span-4 lg:col-span-3">
+          <aside className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 shadow-xl backdrop-blur-md space-y-4">
+            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-3">
+              <Avatar className="h-11 w-11 bg-violet-600/80 text-white">
+                {tenant?.logo_url ? (
+                  <img
+                    src={tenant.logo_url}
+                    alt={tenantName}
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  initialsFromName(tenantName)
+                )}
+              </Avatar>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-slate-100">{tenantName}</p>
+                <p className="text-xs text-slate-400 line-clamp-2">{tenantTagline}</p>
+              </div>
+            </div>
+
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="搜索对话标题或关键字"
+              className="bg-slate-950/70 text-slate-200 placeholder:text-slate-500 border-white/10 focus-visible:ring-violet-400/40"
+            />
+
+            <Button
+              className="w-full bg-violet-600 text-white hover:bg-violet-500"
+              onClick={() => void handleCreateSession()}
+            >
+              新建对话
+            </Button>
+
+            <div className="space-y-3">{sessionListContent()}</div>
+          </aside>
+        </div>
+
+        <div className="col-span-12 md:col-span-8 lg:col-span-9">
+          <section className="rounded-2xl border border-white/10 bg-slate-900/60 shadow-xl backdrop-blur-md">
+            <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+              <div>
+                <h1 className="text-lg font-semibold text-slate-100">
+                  {activeSession?.title ?? "智能学习搭子"}
+                </h1>
+                <p className="text-sm text-slate-400">{tenantTagline}</p>
+              </div>
+              <Button
+                className="bg-violet-600 text-white hover:bg-violet-500"
+                onClick={() => void handleCreateSession()}
+              >
+                新建对话
+              </Button>
+            </header>
+
+            <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,1.1fr)]">
+              <div className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/40">
+                <div
+                  ref={messageContainerRef}
+                  className="h-[calc(100vh-220px)] overflow-y-auto px-4 pt-4 pb-24 space-y-4"
+                >
+                  {chatContent()}
                 </div>
+
+                <form onSubmit={handleSubmit}>
+                  <div className="sticky bottom-0 rounded-b-2xl border-t border-white/10 bg-slate-900/70 px-4 py-3 backdrop-blur-md">
+                    <div className="flex items-end gap-3">
+                      <Textarea
+                        ref={textareaRef}
+                        value={input}
+                        onChange={(event) => setInput(event.target.value)}
+                        onKeyDown={handleTextareaKeyDown}
+                        disabled={sending}
+                        className="min-h-[56px] max-h-[200px] resize-none bg-slate-950/70 text-slate-100 placeholder:text-slate-500"
+                        placeholder="输入你的问题，如：‘贪心与动态规划的区别是什么？’"
+                        maxLength={1200}
+                      />
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="submit"
+                          disabled={sending || !input.trim()}
+                          className="px-5 bg-violet-600 text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {sending ? "发送中…" : "发送"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={!selectedSessionId || sending || messages.length === 0}
+                          className="border-white/15 text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => void handleFollowUp()}
+                        >
+                          还没懂？
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Tip：你可以粘贴题目截图或代码，我会更快定位问题。
+                    </p>
+                  </div>
+                </form>
               </div>
 
-              <form
-                onSubmit={handleSubmit}
-                className="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Input
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    placeholder="告诉我你遇到的学习问题或目标..."
-                    disabled={sending}
-                    className="flex-1 border-violet-400/40 bg-white/10 text-white placeholder:text-white/40 focus:border-violet-400 focus:ring-violet-500/40"
-                    maxLength={800}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={sending || !input.trim()}
-                    className="h-11 bg-gradient-to-r from-violet-600 to-purple-600 px-6 text-white shadow-lg hover:from-violet-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {sending ? "发送中..." : "发送"}
-                  </Button>
+              <aside className="space-y-4">
+                <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-4 text-slate-300">
+                  <h3 className="mb-2 text-sm font-medium text-slate-200">
+                    推荐补充资源
+                  </h3>
+                  <ul className="space-y-2 text-sm">
+                    <li className="opacity-70">对接后自动展示，当前为空~</li>
+                  </ul>
                 </div>
-                <p className="text-right text-xs text-white/40">
-                  {input.length}/800 字符 ・ 默认时区：Asia/Tokyo
-                </p>
-              </form>
-            </section>
-
-            <aside className="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur lg:w-96">
-              <Card className="border-violet-500/30 bg-violet-500/10 p-4 text-sm text-white/80">
-                <p className="font-semibold text-violet-100">推荐补充资源</p>
-                <p className="mt-2 text-white/60">
-                  这里将展示与回答相关的文章、课程或题库。当知识库接入后，会自动在此列出推荐内容。
-                </p>
-              </Card>
-
-              <Card className="border-white/10 bg-black/20 p-4 text-sm text-white/70">
-                <p className="font-semibold text-white/80">使用小提示</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-white/60">
-                  <li>问题描述越具体，答案越精准。</li>
-                  <li>通过「还没懂？」按钮，可以追问并获得不同角度的解释。</li>
-                  <li>稍后支持引用真实资料，帮助快速定位原始来源。</li>
-                </ul>
-              </Card>
-            </aside>
-          </div>
-        </main>
+                <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-4 text-slate-300">
+                  <h3 className="mb-2 text-sm font-medium text-slate-200">使用小提示</h3>
+                  <ul className="space-y-2 text-sm leading-relaxed">
+                    <li>问题描述越具体，答案越精准。</li>
+                    <li>通过「还没懂？」按钮，可以追问并获得不同角度的解释。</li>
+                    <li>稍后支持引用真实资料，再助你快速定位原始来源。</li>
+                  </ul>
+                </div>
+              </aside>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
