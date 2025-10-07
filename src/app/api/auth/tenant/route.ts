@@ -7,8 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Database } from "@/db/types";
 
 export async function POST(request: Request) {
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient<Database>({ cookies: cookieStore });
+  const supabase = createRouteHandlerClient<Database>({ cookies: () => cookies() });
 
   const {
     data: { session },

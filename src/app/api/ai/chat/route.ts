@@ -73,8 +73,7 @@ export async function POST(request: NextRequest) {
       // 保存对话记录（即使没有真实的AI响应）
       try {
         const userMessage = chatMessages[chatMessages.length - 1];
-        await supabaseAdmin
-          .from('qa_records')
+        await (supabaseAdmin.from('qa_records') as any)
           .insert({
             user_id: session.user.id,
             tenant_id: profile.tenant_id,
@@ -115,8 +114,7 @@ export async function POST(request: NextRequest) {
       
       // 保存对话记录
       try {
-        await supabaseAdmin
-          .from('qa_records')
+        await (supabaseAdmin.from('qa_records') as any)
           .insert({
             user_id: session.user.id,
             tenant_id: profile.tenant_id,

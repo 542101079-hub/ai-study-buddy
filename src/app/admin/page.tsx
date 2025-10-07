@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 
 import { AdminClient } from "./admin-client";
-import { loadTenantScopedProfile, loadTenantSummary } from "@/lib/auth/tenant-context";
+import { loadTenantSummary } from "@/lib/auth/tenant-context";
 import { createServerSupabaseClient, supabaseAdmin, getServerSession } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ export default async function AdminPage() {
   // 使用service role获取租户信息和成员列表
   const { data: tenant } = await supabaseAdmin
     .from("tenants")
-    .select("id, name, slug")
+    .select("id, name, slug, logo_url, tagline")
     .eq("id", profile.tenant_id)
     .single();
 

@@ -8,7 +8,11 @@ AND table_name IN (
   'learning_plans',
   'learning_tasks',
   'assistant_sessions',
-  'assistant_messages'
+  'assistant_messages',
+  'journal_entries',
+  'mood_events',
+  'motivation_stats',
+  'badges'
 );
 
 -- 检查 daily_plans 表结构
@@ -29,6 +33,34 @@ ORDER BY ordinal_position;
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns 
 WHERE table_name = 'assistant_messages' 
+AND table_schema = 'public'
+ORDER BY ordinal_position;
+
+-- journal_entries 结构
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_name = 'journal_entries' 
+AND table_schema = 'public'
+ORDER BY ordinal_position;
+
+-- mood_events 结构
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_name = 'mood_events' 
+AND table_schema = 'public'
+ORDER BY ordinal_position;
+
+-- motivation_stats 结构
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_name = 'motivation_stats' 
+AND table_schema = 'public'
+ORDER BY ordinal_position;
+
+-- badges 结构
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_name = 'badges' 
 AND table_schema = 'public'
 ORDER BY ordinal_position;
 

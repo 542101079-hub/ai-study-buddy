@@ -15,6 +15,7 @@ import {
 import { createServerSupabaseClient, getServerSession, supabaseAdmin } from "@/lib/supabase/server";
 
 import { LogoutButton } from "./logout-button";
+import { QuickActionNavigate } from "./quick-action-navigate";
 
 const HIGHLIGHTS = [
   {
@@ -52,7 +53,7 @@ const QUICK_ACTIONS = [
     title: "记录学习日志",
     description: "及时整理关键收获与思考，沉淀每一次成长。",
     cta: "添加笔记",
-    href: "/learning",
+    href: "/journal",
   },
 ];
 
@@ -226,20 +227,15 @@ export default async function DashboardPage() {
                     <h3 className="text-base font-semibold text-white">{action.title}</h3>
                     <p className="mt-2 text-sm text-white/85">{action.description}</p>
                     {action.href ? (
-                      <Button
+                      <QuickActionNavigate
+                        href={action.href}
+                        external={action.external}
                         variant="ghost"
                         size="sm"
                         className="mt-4 px-1 text-white/85"
-                        asChild
                       >
-                        <Link
-                          href={action.href}
-                          target={action.external ? "_blank" : undefined}
-                          rel={action.external ? "noopener noreferrer" : undefined}
-                        >
-                          {action.cta}
-                        </Link>
-                      </Button>
+                        {action.cta}
+                      </QuickActionNavigate>
                     ) : (
                       <Button variant="ghost" size="sm" className="mt-4 px-1 text-white/85">
                         {action.cta}

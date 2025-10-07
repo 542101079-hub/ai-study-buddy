@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const parsedBody = BodySchema.safeParse(json);
 
     if (!parsedBody.success) {
-      return NextResponse.json({ error: parsedBody.flatten() }, { status: 400 });
+      return NextResponse.json({ error: parsedBody.error.flatten() }, { status: 400 });
     }
 
     const { status, actualMinutes } = parsedBody.data;
@@ -97,6 +97,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // 更新任务状态
+    const taskRow = task as any;
     const updateData: any = {};
     if (status !== undefined) {
       updateData.status = status;
@@ -105,8 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updateData.actual_minutes = actualMinutes;
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from('daily_tasks')
+    const { error: updateError } = await (supabaseAdmin.from('daily_tasks') as any)
       .update(updateData)
       .eq('id', id);
 
@@ -122,7 +122,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { data: plan, error: planError } = await supabaseAdmin
       .from('daily_plans')
       .select('*')
-      .eq('id', task.daily_plan_id)
+      .eq('id', taskRow?.daily_plan_id)
       .single();
 
     if (planError) {
@@ -137,7 +137,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { data: allTasks, error: tasksError } = await supabaseAdmin
       .from('daily_tasks')
       .select('*')
-      .eq('daily_plan_id', task.daily_plan_id)
+      .eq('daily_plan_id', taskRow?.daily_plan_id)
       .order('order_num');
 
     if (tasksError) {

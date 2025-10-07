@@ -64,7 +64,7 @@ function normalizeResponse(plan: any, tasks: any[]) {
 
 // 生成每日任务的函数
 async function generateDailyTasks(userId: string, tenantId: string, planId: string, goalPlanId?: string, dailyMinutes: number = DEFAULT_DAILY_MINUTES) {
-  const tasks = [];
+  const tasks: any[] = [];
   console.log('[generateDailyTasks] Starting with:', { userId, tenantId, planId, goalPlanId, dailyMinutes });
   
   // 如果有指定的学习计划，尝试从学习目标中获取任务
@@ -87,14 +87,18 @@ async function generateDailyTasks(userId: string, tenantId: string, planId: stri
       // 使用学习目标中的任务
       for (let i = 0; i < learningTasks.length; i++) {
         const task = learningTasks[i];
-        const { data: newTask, error: insertError } = await supabaseAdmin
-          .from('daily_tasks')
+        const taskAny = task as any;
+
+        const { data: newTask, error: insertError } = await (supabaseAdmin.from('daily_tasks') as any)
           .insert({
             tenant_id: tenantId,
             daily_plan_id: planId,
-            phase_id: task.phase_id,
-            topic: task.title,
-            estimated_minutes: Math.min(task.estimated_minutes || 60, Math.floor(dailyMinutes / learningTasks.length)),
+            phase_id: taskAny?.phase_id ?? null,
+            topic: taskAny?.title ?? "",
+            estimated_minutes: Math.min(
+              (taskAny?.estimated_minutes as number | undefined) ?? 60,
+              Math.floor(dailyMinutes / learningTasks.length),
+            ),
             actual_minutes: 0,
             status: 'pending',
             order_num: i + 1,
@@ -119,7 +123,7 @@ async function generateDailyTasks(userId: string, tenantId: string, planId: stri
     console.log('[generateDailyTasks] Not enough tasks (', tasks.length, '), generating default tasks');
     
     // 根据学习计划生成具体的任务
-    let defaultTasks = [];
+    let defaultTasks: any[] = [];
     
     if (goalPlanId) {
       // 获取学习计划信息
@@ -129,7 +133,10 @@ async function generateDailyTasks(userId: string, tenantId: string, planId: stri
         .eq('id', goalPlanId)
         .single();
       
-      if (planData?.title?.includes('TypeScript')) {
+      const planInfo = planData as any;
+      const planTitle: string | undefined = planInfo?.title ?? undefined;
+
+      if (planTitle?.includes('TypeScript')) {
         // TypeScript 学习计划的具体任务
         defaultTasks = [
           {
@@ -149,7 +156,7 @@ async function generateDailyTasks(userId: string, tenantId: string, planId: stri
             estimated_minutes: Math.max(30, dailyMinutes - 135),
           },
         ];
-      } else if (planData?.title?.includes('React')) {
+      } else if (planTitle?.includes('React')) {
         // React 学习计划的具体任务
         defaultTasks = [
           {
@@ -197,8 +204,7 @@ async function generateDailyTasks(userId: string, tenantId: string, planId: stri
     for (let i = tasks.length; i < Math.min(4, defaultTasks.length); i++) {
       const taskData = defaultTasks[i];
       console.log('[generateDailyTasks] Creating default task:', taskData);
-      const { data: newTask, error: insertError } = await supabaseAdmin
-        .from('daily_tasks')
+      const { data: newTask, error: insertError } = await (supabaseAdmin.from('daily_tasks') as any)
         .insert({
           tenant_id: tenantId,
           daily_plan_id: planId,
@@ -277,12 +283,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    let plan = existingPlan?.[0];
+    let plan: any = existingPlan?.[0];
 
     // 如果没有现有计划，创建一个新的
     if (!plan) {
-      const { data: newPlan, error: insertError } = await supabaseAdmin
-        .from('daily_plans')
+      const { data: newPlan, error: insertError } = await (supabaseAdmin.from('daily_plans') as any)
         .insert({
           user_id: user.id,
           tenant_id: profile.tenant_id,

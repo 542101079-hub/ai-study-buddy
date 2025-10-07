@@ -14,14 +14,14 @@ const updateSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const auth = await getServerAuthContext();
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const sessionId = params.id;
+  const { id: sessionId } = await context.params;
   if (!sessionId) {
     return NextResponse.json({ error: "Session id required" }, { status: 400 });
   }
@@ -67,14 +67,14 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const auth = await getServerAuthContext();
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const sessionId = params.id;
+  const { id: sessionId } = await context.params;
   if (!sessionId) {
     return NextResponse.json({ error: "Session id required" }, { status: 400 });
   }

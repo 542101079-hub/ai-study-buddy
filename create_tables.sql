@@ -190,3 +190,136 @@ USING (
       AND admin_profiles.role = 'admin'
   )
 );
+
+-- ============================
+-- 学习日志与激励体系
+-- ============================
+
+CREATE TABLE IF NOT EXISTS public.journal_entries (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE cascade,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE cascade,
+  content text NOT NULL,
+  mood text CHECK (mood IN ('positive','neutral','anxious','down')),
+  tone text CHECK (tone IN ('strict','healer','social')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.mood_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE cascade,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE cascade,
+  source text NOT NULL,
+  mood text NOT NULL CHECK (mood IN ('positive','neutral','anxious','down')),
+  payload jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.motivation_stats (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE cascade,
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE cascade,
+  streak_days int NOT NULL DEFAULT 0,
+  level int NOT NULL DEFAULT 1,
+  last_checkin date,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.badges (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE cascade,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE cascade,
+  code text NOT NULL,
+  name text NOT NULL,
+  acquired_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, code)
+);
+
+ALTER TABLE public.journal_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mood_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.motivation_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.badges ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY journal_entries_self_rw
+ON public.journal_entries
+FOR ALL
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY journal_entries_admin_r
+ON public.journal_entries
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.profiles AS admin_profiles
+    WHERE admin_profiles.id = auth.uid()
+      AND admin_profiles.tenant_id = public.journal_entries.tenant_id
+      AND admin_profiles.role = 'admin'
+  )
+);
+
+CREATE POLICY mood_events_self_rw
+ON public.mood_events
+FOR ALL
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY mood_events_admin_r
+ON public.mood_events
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.profiles AS admin_profiles
+    WHERE admin_profiles.id = auth.uid()
+      AND admin_profiles.tenant_id = public.mood_events.tenant_id
+      AND admin_profiles.role = 'admin'
+  )
+);
+
+CREATE POLICY motivation_stats_self_rw
+ON public.motivation_stats
+FOR ALL
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY motivation_stats_admin_r
+ON public.motivation_stats
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.profiles AS admin_profiles
+    WHERE admin_profiles.id = auth.uid()
+      AND admin_profiles.tenant_id = public.motivation_stats.tenant_id
+      AND admin_profiles.role = 'admin'
+  )
+);
+
+CREATE POLICY badges_self_rw
+ON public.badges
+FOR ALL
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY badges_admin_r
+ON public.badges
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.profiles AS admin_profiles
+    WHERE admin_profiles.id = auth.uid()
+      AND admin_profiles.tenant_id = public.badges.tenant_id
+      AND admin_profiles.role = 'admin'
+  )
+);

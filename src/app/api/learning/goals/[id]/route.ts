@@ -3,7 +3,7 @@ import { getServerSession, supabaseAdmin } from '@/lib/supabase/server';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -14,7 +14,7 @@ export async function DELETE(
       );
     }
 
-    const goalId = params.id;
+    const { id: goalId } = await context.params;
     if (!goalId) {
       return NextResponse.json(
         { error: 'Goal ID is required' },

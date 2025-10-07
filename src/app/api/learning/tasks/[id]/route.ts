@@ -3,7 +3,7 @@ import { getServerSession, supabaseAdmin } from '@/lib/supabase/server';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -14,7 +14,7 @@ export async function DELETE(
       );
     }
 
-    const taskId = params.id;
+    const { id: taskId } = await context.params;
     if (!taskId) {
       return NextResponse.json(
         { error: 'Task ID is required' },

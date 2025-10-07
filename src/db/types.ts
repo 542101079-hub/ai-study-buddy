@@ -272,6 +272,175 @@ export type Database = {
           },
         ];
       };
+      journal_entries: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          user_id: string;
+          content: string;
+          mood: "positive" | "neutral" | "anxious" | "down" | null;
+          tone: "strict" | "healer" | "social" | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          user_id: string;
+          content: string;
+          mood?: "positive" | "neutral" | "anxious" | "down" | null;
+          tone?: "strict" | "healer" | "social" | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          user_id?: string;
+          content?: string;
+          mood?: "positive" | "neutral" | "anxious" | "down" | null;
+          tone?: "strict" | "healer" | "social" | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_tenant_id_fkey";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "journal_entries_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      mood_events: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          user_id: string;
+          source: string;
+          mood: "positive" | "neutral" | "anxious" | "down";
+          payload: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          user_id: string;
+          source: string;
+          mood: "positive" | "neutral" | "anxious" | "down";
+          payload?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          user_id?: string;
+          source?: string;
+          mood?: "positive" | "neutral" | "anxious" | "down";
+          payload?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mood_events_tenant_id_fkey";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mood_events_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      motivation_stats: {
+        Row: {
+          user_id: string;
+          tenant_id: string;
+          streak_days: number;
+          level: number;
+          last_checkin: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          tenant_id: string;
+          streak_days?: number;
+          level?: number;
+          last_checkin?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          tenant_id?: string;
+          streak_days?: number;
+          level?: number;
+          last_checkin?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "motivation_stats_tenant_id_fkey";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "motivation_stats_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      badges: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          user_id: string;
+          code: string;
+          name: string;
+          acquired_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          user_id: string;
+          code: string;
+          name: string;
+          acquired_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          user_id?: string;
+          code?: string;
+          name?: string;
+          acquired_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "badges_tenant_id_fkey";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "badges_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

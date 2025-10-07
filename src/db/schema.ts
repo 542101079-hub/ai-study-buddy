@@ -631,6 +631,201 @@ export const assistantMessages = pgTable(
   },
 ).enableRLS();
 
+export const journalEntries = pgTable(
+  "journal_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    mood: text("mood")
+      .$type<"positive" | "neutral" | "anxious" | "down">(),
+    tone: text("tone")
+      .$type<"strict" | "healer" | "social">(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOnly = sql`auth.uid() = ${table.userId}` as const;
+
+    return {
+      moodAllowed: check(
+        "journal_entries_mood_allowed",
+        sql`${table.mood} IS NULL OR ${table.mood} IN ('positive','neutral','anxious','down')`,
+      ),
+      toneAllowed: check(
+        "journal_entries_tone_allowed",
+        sql`${table.tone} IS NULL OR ${table.tone} IN ('strict','healer','social')`,
+      ),
+      journalEntriesSelfPolicy: pgPolicy("journal_entries_self_rw", {
+        for: "all",
+        to: "authenticated",
+        using: selfOnly,
+        withCheck: selfOnly,
+      }),
+      journalEntriesAdminPolicy: pgPolicy("journal_entries_admin_r", {
+        for: "select",
+        to: "authenticated",
+        using: tenantAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const moodEvents = pgTable(
+  "mood_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    source: text("source").notNull(),
+    mood: text("mood")
+      .notNull()
+      .$type<"positive" | "neutral" | "anxious" | "down">(),
+    payload: jsonb("payload"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOnly = sql`auth.uid() = ${table.userId}` as const;
+
+    return {
+      moodAllowed: check(
+        "mood_events_mood_allowed",
+        sql`${table.mood} IN ('positive','neutral','anxious','down')`,
+      ),
+      moodEventsSelfPolicy: pgPolicy("mood_events_self_rw", {
+        for: "all",
+        to: "authenticated",
+        using: selfOnly,
+        withCheck: selfOnly,
+      }),
+      moodEventsAdminPolicy: pgPolicy("mood_events_admin_r", {
+        for: "select",
+        to: "authenticated",
+        using: tenantAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const motivationStats = pgTable(
+  "motivation_stats",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    streakDays: integer("streak_days").notNull().default(0),
+    level: integer("level").notNull().default(1),
+    lastCheckin: date("last_checkin"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOnly = sql`auth.uid() = ${table.userId}` as const;
+
+    return {
+      streakNonNegative: check(
+        "motivation_stats_streak_days_non_negative",
+        sql`${table.streakDays} >= 0`,
+      ),
+      levelPositive: check(
+        "motivation_stats_level_positive",
+        sql`${table.level} >= 1`,
+      ),
+      motivationStatsSelfPolicy: pgPolicy("motivation_stats_self_rw", {
+        for: "all",
+        to: "authenticated",
+        using: selfOnly,
+        withCheck: selfOnly,
+      }),
+      motivationStatsAdminPolicy: pgPolicy("motivation_stats_admin_r", {
+        for: "select",
+        to: "authenticated",
+        using: tenantAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const badges = pgTable(
+  "badges",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    acquiredAt: timestamp("acquired_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOnly = sql`auth.uid() = ${table.userId}` as const;
+
+    return {
+      userBadgeUnique: uniqueIndex("badges_user_code_unique").on(
+        table.userId,
+        table.code,
+      ),
+      badgesSelfPolicy: pgPolicy("badges_self_rw", {
+        for: "all",
+        to: "authenticated",
+        using: selfOnly,
+        withCheck: selfOnly,
+      }),
+      badgesAdminPolicy: pgPolicy("badges_admin_r", {
+        for: "select",
+        to: "authenticated",
+        using: tenantAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
 
 export const learningGoalRelations = relations(learningGoals, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -751,6 +946,50 @@ export const assistantMessageRelations = relations(assistantMessages, ({ one }) 
   }),
 }));
 
+export const journalEntryRelations = relations(journalEntries, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [journalEntries.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [journalEntries.userId],
+    references: [authUsers.id],
+  }),
+}));
+
+export const moodEventRelations = relations(moodEvents, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [moodEvents.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [moodEvents.userId],
+    references: [authUsers.id],
+  }),
+}));
+
+export const motivationStatsRelations = relations(motivationStats, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [motivationStats.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [motivationStats.userId],
+    references: [authUsers.id],
+  }),
+}));
+
+export const badgeRelations = relations(badges, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [badges.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(authUsers, {
+    fields: [badges.userId],
+    references: [authUsers.id],
+  }),
+}));
+
 export const tenantRelations = relations(tenants, ({ many }) => ({
   profiles: many(profiles),
   users: many(appUsers),
@@ -799,6 +1038,14 @@ export type AssistantSession = typeof assistantSessions.$inferSelect;
 export type NewAssistantSession = typeof assistantSessions.$inferInsert;
 export type AssistantMessage = typeof assistantMessages.$inferSelect;
 export type NewAssistantMessage = typeof assistantMessages.$inferInsert;
+export type JournalEntry = typeof journalEntries.$inferSelect;
+export type NewJournalEntry = typeof journalEntries.$inferInsert;
+export type MoodEvent = typeof moodEvents.$inferSelect;
+export type NewMoodEvent = typeof moodEvents.$inferInsert;
+export type MotivationStats = typeof motivationStats.$inferSelect;
+export type NewMotivationStats = typeof motivationStats.$inferInsert;
+export type Badge = typeof badges.$inferSelect;
+export type NewBadge = typeof badges.$inferInsert;
 
 export { appUsers as users };
 

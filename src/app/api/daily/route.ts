@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    let plan = existingPlans?.[0];
+    let plan: any = existingPlans?.[0];
 
     // 如果没有现有计划，创建一个新的
     if (!plan) {
@@ -118,8 +118,7 @@ export async function GET(request: NextRequest) {
         }, { status: 500 });
       }
 
-      const { data: newPlan, error: insertError } = await supabaseAdmin
-        .from('daily_plans')
+      const { data: newPlan, error: insertError } = await (supabaseAdmin.from('daily_plans') as any)
         .insert({
           user_id: user.id,
           tenant_id: profile.tenant_id,
