@@ -36,22 +36,23 @@ const HIGHLIGHTS = [
 
 const QUICK_ACTIONS = [
   {
-    title: '查看学习计划',
-    description: '掌握最新计划内容，灵活调整整体节奏。',
-    cta: '查看计划',
-    href: '/learning/plans',
+    title: "查看学习计划",
+    description: "快速浏览计划进度，安排接下来的学习任务。",
+    cta: "查看计划",
+    href: "/learning/plans",
   },
   {
-    title: '开始下一次学习',
-    description: '进入学习空间，与 AI 学习搭子继续推进。',
-    cta: '开始学习',
-    href: '/learning',
+    title: "开始下一次学习",
+    description: "打开与 AI 学习搭子的智能答疑页面，随时提问。",
+    cta: "与 AI 学习搭子对话",
+    href: "/assistant",
+    external: true,
   },
   {
-    title: '记录学习心得',
-    description: '随手记下关键收获、项目灵感和反思。',
-    cta: '添加笔记',
-    href: '/learning',
+    title: "记录学习日志",
+    description: "及时整理关键收获与思考，沉淀每一次成长。",
+    cta: "添加笔记",
+    href: "/learning",
   },
 ];
 
@@ -231,7 +232,13 @@ export default async function DashboardPage() {
                         className="mt-4 px-1 text-white/85"
                         asChild
                       >
-                        <Link href={action.href}>{action.cta}</Link>
+                        <Link
+                          href={action.href}
+                          target={action.external ? "_blank" : undefined}
+                          rel={action.external ? "noopener noreferrer" : undefined}
+                        >
+                          {action.cta}
+                        </Link>
                       </Button>
                     ) : (
                       <Button variant="ghost" size="sm" className="mt-4 px-1 text-white/85">
@@ -325,3 +332,5 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
+

@@ -1,3 +1,11 @@
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 type AppUsersTable = {
   Row: {
     id: string;
@@ -161,10 +169,105 @@ export type Database = {
             referencedRelation: "tenants";
             referencedColumns: ["id"];
           },
+      {
+        foreignKeyName: "app_sessions_user_id_fkey";
+        columns: ["user_id"];
+        referencedRelation: "users";
+        referencedColumns: ["id"];
+      },
+    ];
+  };
+      assistant_sessions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          user_id: string;
+          title: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          user_id: string;
+          title?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          user_id?: string;
+          title?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
           {
-            foreignKeyName: "app_sessions_user_id_fkey";
+            foreignKeyName: "assistant_sessions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_sessions_user_id_fkey";
             columns: ["user_id"];
-            referencedRelation: "users";
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      assistant_messages: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          session_id: string;
+          user_id: string;
+          role: "user" | "assistant" | "system";
+          content: Json;
+          tokens: number | null;
+          created_at: string;
+          order_num: number;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          session_id: string;
+          user_id: string;
+          role: "user" | "assistant" | "system";
+          content: Json;
+          tokens?: number | null;
+          created_at?: string;
+          order_num?: number;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          session_id?: string;
+          user_id?: string;
+          role?: "user" | "assistant" | "system";
+          content?: Json;
+          tokens?: number | null;
+          created_at?: string;
+          order_num?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_tenant_id_fkey";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_messages_session_id_fkey";
+            columns: ["session_id"];
+            referencedRelation: "assistant_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assistant_messages_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];

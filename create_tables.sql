@@ -98,3 +98,95 @@ CREATE POLICY "daily_tasks_tenant_access" ON "daily_tasks" AS PERMISSIVE FOR ALL
           )
         )
     ));
+
+-- ============================
+-- ���� AI ���Ա����Ի���
+-- ============================
+
+CREATE TABLE IF NOT EXISTS public.assistant_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE cascade,
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE cascade,
+  title text NOT NULL DEFAULT '新的对话',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.assistant_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL REFERENCES public.tenants(id) ON DELETE cascade,
+  session_id uuid NOT NULL REFERENCES public.assistant_sessions(id) ON DELETE cascade,
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE cascade,
+  role text NOT NULL CHECK (role IN ('user','assistant','system')),
+  content jsonb NOT NULL,
+  tokens int DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  order_num int GENERATED ALWAYS AS IDENTITY
+);
+
+CREATE INDEX IF NOT EXISTS idx_assistant_sessions_tenant_user
+  ON public.assistant_sessions(tenant_id, user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_assistant_messages_session
+  ON public.assistant_messages(session_id, order_num);
+
+ALTER TABLE public.assistant_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assistant_messages ENABLE ROW LEVEL SECURITY;
+
+-- ͬ�⻧�Լ���д�Լ����Ự
+CREATE POLICY assistant_sessions_rw_self
+ON public.assistant_sessions
+FOR ALL
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+-- �⻧����Ա�ɶ���⻧ȫ������
+CREATE POLICY assistant_sessions_r_admin
+ON public.assistant_sessions
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.profiles AS admin_profiles
+    WHERE admin_profiles.id = auth.uid()
+      AND admin_profiles.tenant_id = public.assistant_sessions.tenant_id
+      AND admin_profiles.role = 'admin'
+  )
+);
+
+-- ͬ�Ự�Լ���д��Ϣ
+CREATE POLICY assistant_messages_rw_self
+ON public.assistant_messages
+FOR ALL
+TO authenticated
+USING (
+  session_id IN (
+    SELECT id
+    FROM public.assistant_sessions s
+    WHERE s.user_id = auth.uid()
+  )
+)
+WITH CHECK (
+  session_id IN (
+    SELECT id
+    FROM public.assistant_sessions s
+    WHERE s.user_id = auth.uid()
+  )
+);
+
+-- �⻧����Ա�ɶ���⻧ȫ����Ϣ
+CREATE POLICY assistant_messages_r_admin
+ON public.assistant_messages
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.profiles AS admin_profiles
+    WHERE admin_profiles.id = auth.uid()
+      AND admin_profiles.tenant_id = public.assistant_messages.tenant_id
+      AND admin_profiles.role = 'admin'
+  )
+);

@@ -524,6 +524,113 @@ export const dailyTasks = pgTable(
   },
 ).enableRLS();
 
+export const assistantSessions = pgTable(
+  "assistant_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default("新的对话"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const selfOnly = sql`auth.uid() = ${table.userId}` as const;
+
+    return {
+      tenantUserIdx: index("idx_assistant_sessions_tenant_user").on(
+        table.tenantId,
+        table.userId,
+        table.createdAt,
+      ),
+      assistantSessionsSelfPolicy: pgPolicy("assistant_sessions_rw_self", {
+        for: "all",
+        to: "authenticated",
+        using: selfOnly,
+        withCheck: selfOnly,
+      }),
+      assistantSessionsAdminPolicy: pgPolicy("assistant_sessions_r_admin", {
+        for: "select",
+        to: "authenticated",
+        using: tenantAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
+export const assistantMessages = pgTable(
+  "assistant_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => assistantSessions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    role: text("role")
+      .notNull()
+      .$type<"user" | "assistant" | "system">(),
+    content: jsonb("content").notNull(),
+    tokens: integer("tokens").default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    orderNum: integer("order_num").generatedAlwaysAsIdentity(),
+  },
+  (table) => {
+    const tenantAdmin = sql`EXISTS (
+      SELECT 1
+      FROM public.profiles AS admin_profiles
+      WHERE admin_profiles.id = auth.uid()
+        AND admin_profiles.tenant_id = ${table.tenantId}
+        AND admin_profiles.role = 'admin'
+    )` as const;
+
+    const ownsSession = sql`EXISTS (
+      SELECT 1
+      FROM public.assistant_sessions AS user_sessions
+      WHERE user_sessions.id = ${table.sessionId}
+        AND user_sessions.user_id = auth.uid()
+    )` as const;
+
+    return {
+      roleAllowed: check(
+        "assistant_messages_role_allowed",
+        sql`${table.role} IN ('user', 'assistant', 'system')`,
+      ),
+      sessionOrderIdx: index("idx_assistant_messages_session").on(
+        table.sessionId,
+        table.orderNum,
+      ),
+      assistantMessagesSelfPolicy: pgPolicy("assistant_messages_rw_self", {
+        for: "all",
+        to: "authenticated",
+        using: ownsSession,
+        withCheck: ownsSession,
+      }),
+      assistantMessagesAdminPolicy: pgPolicy("assistant_messages_r_admin", {
+        for: "select",
+        to: "authenticated",
+        using: tenantAdmin,
+      }),
+    };
+  },
+).enableRLS();
+
 
 export const learningGoalRelations = relations(learningGoals, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -617,6 +724,33 @@ export const dailyTaskRelations = relations(dailyTasks, ({ one }) => ({
   }),
 }));
 
+export const assistantSessionRelations = relations(assistantSessions, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [assistantSessions.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(profiles, {
+    fields: [assistantSessions.userId],
+    references: [profiles.id],
+  }),
+  messages: many(assistantMessages),
+}));
+
+export const assistantMessageRelations = relations(assistantMessages, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [assistantMessages.tenantId],
+    references: [tenants.id],
+  }),
+  session: one(assistantSessions, {
+    fields: [assistantMessages.sessionId],
+    references: [assistantSessions.id],
+  }),
+  user: one(profiles, {
+    fields: [assistantMessages.userId],
+    references: [profiles.id],
+  }),
+}));
+
 export const tenantRelations = relations(tenants, ({ many }) => ({
   profiles: many(profiles),
   users: many(appUsers),
@@ -661,6 +795,10 @@ export type DailyPlanReflection = typeof dailyPlanReflections.$inferSelect;
 export type NewDailyPlanReflection = typeof dailyPlanReflections.$inferInsert;
 export type DailyTask = typeof dailyTasks.$inferSelect;
 export type NewDailyTask = typeof dailyTasks.$inferInsert;
+export type AssistantSession = typeof assistantSessions.$inferSelect;
+export type NewAssistantSession = typeof assistantSessions.$inferInsert;
+export type AssistantMessage = typeof assistantMessages.$inferSelect;
+export type NewAssistantMessage = typeof assistantMessages.$inferInsert;
 
 export { appUsers as users };
 
