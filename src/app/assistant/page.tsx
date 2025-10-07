@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { AssistantClient } from "./assistant-client";
 
 type PageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function AssistantPage({ searchParams }: PageProps) {
@@ -17,10 +17,12 @@ export default async function AssistantPage({ searchParams }: PageProps) {
     redirect("/");
   }
 
-  const tenantSummary = await loadTenantSummary(supabaseAdmin, auth.tenantId);
-  const initialSessionParam = searchParams?.s;
+  const resolvedParams = (await searchParams) ?? {};
+  const initialSessionParam = resolvedParams?.s;
   const initialSessionId =
     typeof initialSessionParam === "string" ? initialSessionParam : null;
+
+  const tenantSummary = await loadTenantSummary(supabaseAdmin, auth.tenantId);
 
   return (
     <AssistantClient tenant={tenantSummary} initialSessionId={initialSessionId} />
