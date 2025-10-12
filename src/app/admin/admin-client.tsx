@@ -12,6 +12,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  aiCard,
+  aiMutedText,
+  aiSubCard,
+} from "@/components/ui/ai-surface";
 
 type TenantInfo = {
   id: string;
@@ -49,7 +54,7 @@ const ROLE_META: Record<UserRole, { label: string; description: string; gradient
   },
   user: {
     label: "成员",
-    description: "可以查看并参与空间内容，管理个人资料。",
+    description: "可以查看与参与空间内容，管理个人资料。",
     gradient: "from-emerald-500/30 via-teal-500/20 to-sky-400/20",
   },
   viewer: {
@@ -72,17 +77,17 @@ export function AdminClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {tenant && <TenantSettings tenant={tenant} onUpdate={handleTenantUpdate} />}
 
-      <Card className="border-white/10 bg-slate-950/80 text-white shadow-[0_24px_60px_rgba(15,23,42,0.45)] backdrop-blur">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-xl font-semibold text-white">成员与权限</CardTitle>
-          <CardDescription className="text-sm text-slate-200/80">
+      <Card className={`${aiCard} p-6`}>
+        <CardHeader className="space-y-2 p-0 pb-4">
+          <CardTitle className="text-xl text-white">成员与权限</CardTitle>
+          <CardDescription className={`text-sm ${aiMutedText}`}>
             管理空间成员的角色与权限，保持团队协作安全有序。
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <MemberManager
             initialMembers={initialMembers}
             currentUserId={currentUserId}
@@ -91,28 +96,28 @@ export function AdminClient({
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-slate-950/80 text-white shadow-[0_24px_60px_rgba(15,23,42,0.45)] backdrop-blur">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-xl font-semibold text-white">角色权限说明</CardTitle>
-          <CardDescription className="text-sm text-slate-200/80">
+      <Card className={`${aiCard} p-6`}>
+        <CardHeader className="space-y-2 p-0 pb-4">
+          <CardTitle className="text-xl text-white">角色权限说明</CardTitle>
+          <CardDescription className={`text-sm ${aiMutedText}`}>
             了解不同角色可执行的操作，便于为成员分配合适职责。
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 p-0 md:grid-cols-2">
           {(Object.keys(ROLE_META) as UserRole[]).map((role) => {
             const meta = ROLE_META[role];
             return (
               <Card
                 key={role}
-                className={`h-full border border-white/10 bg-gradient-to-br ${meta.gradient} text-white shadow-inner backdrop-blur`}
+                className={`${aiSubCard} h-full border border-white/10 bg-gradient-to-br ${meta.gradient} text-white shadow-inner`}
               >
                 <CardHeader className="space-y-1">
-                  <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-white">
                     {meta.label}
                     <span className="text-xs uppercase tracking-wide text-white/70">{role}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-white/80">
+                <CardContent className="text-sm text-white/85">
                   <p>{meta.description}</p>
                 </CardContent>
               </Card>

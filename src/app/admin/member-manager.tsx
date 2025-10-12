@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import {
   canChangeRole,
   canManageUser,
@@ -23,6 +22,12 @@ import {
   hasPermission,
   type UserRole,
 } from "@/lib/auth/permissions";
+import {
+  aiCard,
+  aiMutedText,
+  aiPrimaryBtn,
+  aiSubCard,
+} from "@/components/ui/ai-surface";
 
 type Member = {
   id: string;
@@ -125,17 +130,17 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
   };
 
   return (
-    <Card className="border-white/15 bg-slate-950 text-slate-100 shadow-[0_24px_60px_rgba(15,23,42,0.55)] backdrop-blur">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-lg font-semibold text-slate-50">邀请新的管理员</CardTitle>
-        <CardDescription className="text-sm text-slate-200">
+    <Card className={`${aiCard} p-6 space-y-6`}>
+      <CardHeader className="space-y-1 p-0">
+        <CardTitle className="text-lg font-semibold text-white">邀请新的管理员</CardTitle>
+        <CardDescription className={`text-sm ${aiMutedText}`}>
           添加具有管理权限的成员，确保他们属于当前空间。
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 p-0 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="invite-name" className="text-sm text-slate-100">
+            <Label htmlFor="invite-name" className="text-sm text-slate-200">
               姓名
             </Label>
             <Input
@@ -145,16 +150,16 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="例如：李同学"
-              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
               required
             />
             {fieldErrors.name && (
-              <p className="text-xs text-rose-300">{fieldErrors.name}</p>
+              <p className="text-xs text-rose-300/90">{fieldErrors.name}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-email" className="text-sm text-slate-100">
+            <Label htmlFor="invite-email" className="text-sm text-slate-200">
               登录邮箱
             </Label>
             <Input
@@ -165,16 +170,16 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="admin@example.com"
-              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
               required
             />
             {fieldErrors.email && (
-              <p className="text-xs text-rose-300">{fieldErrors.email}</p>
+              <p className="text-xs text-rose-300/90">{fieldErrors.email}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-password" className="text-sm text-slate-100">
+            <Label htmlFor="invite-password" className="text-sm text-slate-200">
               临时密码
             </Label>
             <Input
@@ -185,16 +190,16 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="至少 8 位"
-              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
               required
             />
             {fieldErrors.password && (
-              <p className="text-xs text-rose-300">{fieldErrors.password}</p>
+              <p className="text-xs text-rose-300/90">{fieldErrors.password}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-username" className="text-sm text-slate-100">
+            <Label htmlFor="invite-username" className="text-sm text-slate-200">
               用户名（可选）
             </Label>
             <Input
@@ -204,19 +209,19 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="不填写将自动生成"
-              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
             />
             {fieldErrors.username && (
-              <p className="text-xs text-rose-300">{fieldErrors.username}</p>
+              <p className="text-xs text-rose-300/90">{fieldErrors.username}</p>
             )}
           </div>
         </CardContent>
-        <CardFooter className="justify-end">
+        <CardFooter className="justify-end p-0">
           <Button
             type="submit"
             size="sm"
             disabled={isSubmitting}
-            className="bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-600 text-white hover:from-sky-400 hover:via-indigo-400 hover:to-violet-500"
+            className={`${aiPrimaryBtn} px-5`}
           >
             {isSubmitting ? "创建中..." : "创建管理员"}
           </Button>
@@ -248,18 +253,17 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
   const handleMemberCreated = (member: Member) => {
     setMembers((previous) => [toEditableMember(member), ...previous]);
     setMessage("成员已添加");
-    setError(null);
   };
 
   const handleSave = (memberId: string) => {
-    const member = members.find((item) => item.id === memberId);
-    if (!member) return;
+    const target = members.find((item) => item.id === memberId);
+    if (!target) return;
 
-    const updates: Partial<Member> = {};
-    const trimmedName = member.draftFullName.trim();
-
-    const hasRoleChange = member.draftRole !== member.role;
-    const hasNameChange = (trimmedName || "") !== ((member.full_name ?? "").trim() || "");
+    const trimmedName = target.draftFullName.trim();
+    const updates: Record<string, unknown> = {};
+    const hasRoleChange = target.draftRole !== target.role;
+    const hasNameChange =
+      (trimmedName || "") !== ((target.full_name ?? "").trim() || "");
 
     if (!hasRoleChange && !hasNameChange) {
       setMessage(null);
@@ -271,7 +275,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
       return;
     }
 
-    if (hasRoleChange && !canChangeRole(currentUserRole, member.role, member.draftRole)) {
+    if (hasRoleChange && !canChangeRole(currentUserRole, target.role, target.draftRole)) {
       setError("当前账号没有权限调整到该角色");
       return;
     }
@@ -280,7 +284,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
     setMessage(null);
 
     if (hasRoleChange) {
-      updates.role = member.draftRole;
+      updates.role = target.draftRole;
     }
     if (hasNameChange) {
       updates.full_name = trimmedName;
@@ -323,7 +327,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-2 text-sm text-rose-100"
+          className="rounded-xl border border-rose-500/50 bg-rose-600/15 px-4 py-2 text-sm text-rose-100"
         >
           {error}
         </div>
@@ -332,7 +336,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
       {message && (
         <div
           role="status"
-          className="rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100"
+          className="rounded-xl border border-emerald-400/50 bg-emerald-600/15 px-4 py-2 text-sm text-emerald-100"
         >
           {message}
         </div>
@@ -347,32 +351,32 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
 
           const roleBadgeClass =
             member.role === "admin"
-              ? "bg-red-500/30 text-red-200"
+              ? "bg-rose-500/20 text-rose-100 border-rose-400/60"
               : member.role === "editor"
-              ? "bg-sky-500/30 text-sky-200"
+              ? "bg-sky-500/20 text-sky-100 border-sky-400/60"
               : member.role === "user"
-              ? "bg-emerald-500/30 text-emerald-200"
-              : "bg-slate-500/30 text-slate-200";
+              ? "bg-emerald-500/20 text-emerald-100 border-emerald-400/60"
+              : "bg-slate-500/20 text-slate-100 border-slate-400/60";
 
           return (
             <li key={member.id}>
-              <Card className="border-white/12 bg-slate-900/85 text-slate-100 shadow-[0_18px_45px_rgba(15,23,42,0.45)]">
-                <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <Card className={`${aiCard} p-6`}>
+                <CardContent className="flex flex-col gap-4 p-0 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-50">
+                    <div className="flex flex-wrap items-center gap-2 text-base font-semibold text-white">
                       <span>{member.full_name || member.username}</span>
-                      {isSelf && <span className="text-xs text-emerald-200">(我)</span>}
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${roleBadgeClass}`}>
+                      {isSelf && <span className="text-xs text-emerald-300">(我)</span>}
+                      <span className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${roleBadgeClass}`}>
                         {getRoleDisplayName(member.role)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-300">@{member.username}</p>
-                    <p className="text-xs text-slate-400">{getRoleDescription(member.role)}</p>
+                    <p className={`text-xs ${aiMutedText}`}>@{member.username}</p>
+                    <p className={`text-xs ${aiMutedText}`}>{getRoleDescription(member.role)}</p>
                   </div>
 
                   <div className="flex flex-col gap-3 md:flex-row md:items-end">
                     <div className="space-y-2">
-                      <Label className="text-xs text-slate-100" htmlFor={`display-name-${member.id}`}>
+                      <Label className="text-xs text-slate-200" htmlFor={`display-name-${member.id}`}>
                         展示名称
                       </Label>
                       <Input
@@ -383,12 +387,12 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                         }
                         disabled={isPending}
                         placeholder="未填写"
-                        className="h-10 w-56 border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
+                        className="h-10 w-56 border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs text-slate-100" htmlFor={`role-${member.id}`}>
+                      <Label className="text-xs text-slate-200" htmlFor={`role-${member.id}`}>
                         角色
                       </Label>
                       <select
@@ -404,7 +408,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                           isPending ||
                           !canManageUser(currentUserRole, member.role)
                         }
-                        className="h-10 min-w-[8rem] rounded-lg border border-white/20 bg-slate-900 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:opacity-60"
+                        className="h-10 min-w-[8rem] rounded-lg border border-white/20 bg-slate-900 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60"
                       >
                         {getAssignableRoles(currentUserRole).map((role) => (
                           <option key={role} value={role}>
@@ -417,10 +421,9 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                     <Button
                       type="button"
                       size="sm"
-                      variant="outline"
                       onClick={() => handleSave(member.id)}
                       disabled={isPending || !hasChanges}
-                      className="border-emerald-400/60 text-emerald-200 hover:bg-emerald-500/15 disabled:border-white/20 disabled:text-slate-500"
+                      className={`${aiPrimaryBtn} px-4 py-2`}
                     >
                       保存
                     </Button>
@@ -432,8 +435,10 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
         })}
         {members.length === 0 && (
           <li>
-            <Card className="border-dashed border-white/15 bg-slate-900/70 text-slate-100">
-              <CardContent className="py-6 text-sm text-slate-300">还没有成员，邀请第一位管理员吧。</CardContent>
+            <Card className={`${aiSubCard} p-6 text-slate-100`}>
+              <CardContent className="p-0 text-sm text-slate-200">
+                还没有成员，邀请第一位管理员吧。
+              </CardContent>
             </Card>
           </li>
         )}

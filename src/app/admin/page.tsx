@@ -1,9 +1,8 @@
-
 import { redirect } from "next/navigation";
 
 import { AdminClient } from "./admin-client";
-import { loadTenantSummary } from "@/lib/auth/tenant-context";
-import { createServerSupabaseClient, supabaseAdmin, getServerSession } from "@/lib/supabase/server";
+import { supabaseAdmin, getServerSession } from "@/lib/supabase/server";
+import { aiMutedText, aiPageBg } from "@/components/ui/ai-surface";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +13,6 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  // 使用service role绕过RLS问题获取profile
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("id, username, full_name, avatar_url, role, tenant_id")
@@ -25,7 +23,6 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  // 使用service role获取租户信息和成员列表
   const { data: tenant } = await supabaseAdmin
     .from("tenants")
     .select("id, name, slug, logo_url, tagline")
@@ -39,23 +36,24 @@ export default async function AdminPage() {
     .order("username", { nullsFirst: false });
 
   return (
-    <section className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">工作空间管理</h1>
-        <p className="text-sm text-white/70">
-          {tenant ? `${tenant.name} (${tenant.slug})` : "当前工作空间"}
-        </p>
-        <p className="text-xs text-white/50">
-          只有管理员可以访问此页面并管理同一租户内的成员。
-        </p>
-        
-      </header>
-      <AdminClient
-        initialTenant={tenant}
-        initialMembers={members ?? []}
-        currentUserId={profile.id}
-        currentUserRole={profile.role}
-      />
-    </section>
+    <div className={aiPageBg}>
+      <section className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-12 text-slate-100">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-semibold text-white">空间管理</h1>
+          <p className={`text-sm ${aiMutedText}`}>
+            {tenant ? `${tenant.name}（${tenant.slug}）` : "当前空间"}
+          </p>
+          <p className={`text-xs ${aiMutedText}`}>
+            只有管理员可以访问此页面并管理同一租户内的成员。
+          </p>
+        </header>
+        <AdminClient
+          initialTenant={tenant}
+          initialMembers={members ?? []}
+          currentUserId={profile.id}
+          currentUserRole={profile.role}
+        />
+      </section>
+    </div>
   );
 }
