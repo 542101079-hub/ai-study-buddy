@@ -31,10 +31,6 @@ const FEATURES = [
     title: "情感激励",
     description: "贴近真实导师的陪伴感，用故事化提示与语音鼓励稳住动力。",
   },
-  {
-    title: "就业进阶",
-    description: "生成个性化面试脚本与技能清单，帮助你完成从学习到就业的跃迁。",
-  },
 ];
 
 export default function HomePage() {
@@ -123,7 +119,7 @@ export default function HomePage() {
 
         <section className="space-y-10">
           <div className="space-y-3">
-            <h2 className="text-3xl font-semibold text-white">AI 学伴的 5 大能力</h2>
+            <h2 className="text-3xl font-semibold text-white">AI 学伴的 4 大能力</h2>
             <p className="max-w-2xl text-base text-white/90">
               将学习路径拆成可执行的行动，用数据与反馈伴随你坚持下去。
             </p>

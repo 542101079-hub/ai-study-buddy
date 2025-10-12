@@ -125,17 +125,17 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
   };
 
   return (
-    <Card className="border-white/10 bg-slate-950/70 text-white shadow-[0_20px_50px_rgba(15,23,42,0.45)] backdrop-blur">
+    <Card className="border-white/15 bg-slate-950 text-slate-100 shadow-[0_24px_60px_rgba(15,23,42,0.55)] backdrop-blur">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-lg font-semibold text-white">邀请新的管理员</CardTitle>
-        <CardDescription className="text-sm text-slate-200/80">
+        <CardTitle className="text-lg font-semibold text-slate-50">邀请新的管理员</CardTitle>
+        <CardDescription className="text-sm text-slate-200">
           添加具有管理权限的成员，确保他们属于当前空间。
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-6">
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="invite-name" className="text-sm text-slate-200">
+            <Label htmlFor="invite-name" className="text-sm text-slate-100">
               姓名
             </Label>
             <Input
@@ -145,16 +145,16 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="例如：李同学"
-              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
               required
             />
             {fieldErrors.name && (
-              <p className="text-xs text-rose-300/90">{fieldErrors.name}</p>
+              <p className="text-xs text-rose-300">{fieldErrors.name}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-email" className="text-sm text-slate-200">
+            <Label htmlFor="invite-email" className="text-sm text-slate-100">
               登录邮箱
             </Label>
             <Input
@@ -165,16 +165,16 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="admin@example.com"
-              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
               required
             />
             {fieldErrors.email && (
-              <p className="text-xs text-rose-300/90">{fieldErrors.email}</p>
+              <p className="text-xs text-rose-300">{fieldErrors.email}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-password" className="text-sm text-slate-200">
+            <Label htmlFor="invite-password" className="text-sm text-slate-100">
               临时密码
             </Label>
             <Input
@@ -185,16 +185,16 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="至少 8 位"
-              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
               required
             />
             {fieldErrors.password && (
-              <p className="text-xs text-rose-300/90">{fieldErrors.password}</p>
+              <p className="text-xs text-rose-300">{fieldErrors.password}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-username" className="text-sm text-slate-200">
+            <Label htmlFor="invite-username" className="text-sm text-slate-100">
               用户名（可选）
             </Label>
             <Input
@@ -204,10 +204,10 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="不填写将自动生成"
-              className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+              className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
             />
             {fieldErrors.username && (
-              <p className="text-xs text-rose-300/90">{fieldErrors.username}</p>
+              <p className="text-xs text-rose-300">{fieldErrors.username}</p>
             )}
           </div>
         </CardContent>
@@ -323,7 +323,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-rose-500/50 bg-rose-500/10 px-4 py-2 text-sm text-rose-200"
+          className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-2 text-sm text-rose-100"
         >
           {error}
         </div>
@@ -332,7 +332,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
       {message && (
         <div
           role="status"
-          className="rounded-lg border border-emerald-400/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200"
+          className="rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100"
         >
           {message}
         </div>
@@ -347,32 +347,32 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
 
           const roleBadgeClass =
             member.role === "admin"
-              ? "bg-red-500/20 text-red-200"
+              ? "bg-red-500/30 text-red-200"
               : member.role === "editor"
-              ? "bg-sky-500/20 text-sky-200"
+              ? "bg-sky-500/30 text-sky-200"
               : member.role === "user"
-              ? "bg-emerald-500/20 text-emerald-200"
-              : "bg-slate-500/20 text-slate-200";
+              ? "bg-emerald-500/30 text-emerald-200"
+              : "bg-slate-500/30 text-slate-200";
 
           return (
             <li key={member.id}>
-              <Card className="border-white/10 bg-slate-950/60 text-white shadow-[0_18px_45px_rgba(15,23,42,0.35)]">
+              <Card className="border-white/12 bg-slate-900/85 text-slate-100 shadow-[0_18px_45px_rgba(15,23,42,0.45)]">
                 <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2 text-base font-semibold text-white">
+                    <div className="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-50">
                       <span>{member.full_name || member.username}</span>
-                      {isSelf && <span className="text-xs text-emerald-300">(我)</span>}
+                      {isSelf && <span className="text-xs text-emerald-200">(我)</span>}
                       <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${roleBadgeClass}`}>
                         {getRoleDisplayName(member.role)}
                       </span>
                     </div>
-                    <p className="text-xs text-white/60">@{member.username}</p>
-                    <p className="text-xs text-white/50">{getRoleDescription(member.role)}</p>
+                    <p className="text-xs text-slate-300">@{member.username}</p>
+                    <p className="text-xs text-slate-400">{getRoleDescription(member.role)}</p>
                   </div>
 
                   <div className="flex flex-col gap-3 md:flex-row md:items-end">
                     <div className="space-y-2">
-                      <Label className="text-xs text-slate-200" htmlFor={`display-name-${member.id}`}>
+                      <Label className="text-xs text-slate-100" htmlFor={`display-name-${member.id}`}>
                         展示名称
                       </Label>
                       <Input
@@ -383,12 +383,12 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                         }
                         disabled={isPending}
                         placeholder="未填写"
-                        className="h-10 w-56 border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500"
+                        className="h-10 w-56 border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-400"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs text-slate-200" htmlFor={`role-${member.id}`}>
+                      <Label className="text-xs text-slate-100" htmlFor={`role-${member.id}`}>
                         角色
                       </Label>
                       <select
@@ -404,7 +404,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                           isPending ||
                           !canManageUser(currentUserRole, member.role)
                         }
-                        className="h-10 min-w-[8rem] rounded-lg border border-white/15 bg-slate-900/70 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60"
+                        className="h-10 min-w-[8rem] rounded-lg border border-white/20 bg-slate-900 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:opacity-60"
                       >
                         {getAssignableRoles(currentUserRole).map((role) => (
                           <option key={role} value={role}>
@@ -420,7 +420,7 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
                       variant="outline"
                       onClick={() => handleSave(member.id)}
                       disabled={isPending || !hasChanges}
-                      className="border-emerald-400/60 text-emerald-200 hover:bg-emerald-500/15 disabled:border-white/15 disabled:text-white/30"
+                      className="border-emerald-400/60 text-emerald-200 hover:bg-emerald-500/15 disabled:border-white/20 disabled:text-slate-500"
                     >
                       保存
                     </Button>
@@ -432,8 +432,8 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
         })}
         {members.length === 0 && (
           <li>
-            <Card className="border-dashed border-white/10 bg-slate-950/50 text-white">
-              <CardContent className="py-6 text-sm text-white/60">还没有成员，邀请第一位管理员吧。</CardContent>
+            <Card className="border-dashed border-white/15 bg-slate-900/70 text-slate-100">
+              <CardContent className="py-6 text-sm text-slate-300">还没有成员，邀请第一位管理员吧。</CardContent>
             </Card>
           </li>
         )}

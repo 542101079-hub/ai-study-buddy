@@ -228,6 +228,7 @@ export function TenantCreateForm() {
                 name="tenantName"
                 placeholder="例如：星航学习社群"
                 autoComplete="organization"
+                className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-400 focus-visible:ring-violet-500 focus-visible:ring-offset-slate-950"
                 disabled={isSubmitting}
                 required
               />
@@ -244,6 +245,7 @@ export function TenantCreateForm() {
                 name="tenantSlug"
                 placeholder="例如：xinghang"
                 autoComplete="off"
+                className="border-white/15 bg-slate-900/70 text-white placeholder:text-slate-500 focus-visible:ring-violet-500 focus-visible:ring-offset-slate-950"
                 disabled={isSubmitting}
               />
               {fieldErrors.tenantSlug && (
