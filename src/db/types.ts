@@ -441,6 +441,67 @@ export type Database = {
           },
         ];
       };
+      habit_runs: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          user_id: string;
+          habit_code: string;
+          date: string;
+          planned_minutes: number;
+          actual_minutes: number;
+          status: "pending" | "doing" | "done" | "skipped";
+          started_at: string | null;
+          completed_at: string | null;
+          meta: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          user_id: string;
+          habit_code: string;
+          date: string;
+          planned_minutes: number;
+          actual_minutes?: number;
+          status?: "pending" | "doing" | "done" | "skipped";
+          started_at?: string | null;
+          completed_at?: string | null;
+          meta?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          user_id?: string;
+          habit_code?: string;
+          date?: string;
+          planned_minutes?: number;
+          actual_minutes?: number;
+          status?: "pending" | "doing" | "done" | "skipped";
+          started_at?: string | null;
+          completed_at?: string | null;
+          meta?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "habit_runs_tenant_id_tenants_id_fk";
+            columns: ["tenant_id"];
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "habit_runs_user_id_users_id_fk";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

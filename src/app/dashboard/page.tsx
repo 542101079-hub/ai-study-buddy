@@ -259,11 +259,12 @@ export default async function DashboardPage() {
                 </p>
                 <p>采用 25 分钟学习 + 5 分钟复盘的节奏，保持专注与灵活。</p>
                 <Button
+                  asChild
                   variant="outline"
                   className="border-violet-700/60 text-white/85 hover:bg-violet-900/70"
                   size="sm"
                 >
-                  查看清单
+                  <Link href="/routines">查看清单</Link>
                 </Button>
               </CardContent>
             </Card>
