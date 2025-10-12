@@ -214,9 +214,6 @@ export default async function DashboardPage() {
                     围绕本周目标安排学习节奏，并注意劳逸结合。
                   </CardDescription>
                 </div>
-                <Button size="sm" className="bg-violet-900/70 hover:bg-violet-700">
-                  调整计划
-                </Button>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 {QUICK_ACTIONS.map((action) => (
