@@ -43,10 +43,10 @@ const STATUS_LABELS: Record<HabitSummaryItem["status"], string> = {
 };
 
 const STATUS_STYLE: Record<HabitSummaryItem["status"], string> = {
-  pending: "border-white/15 bg-slate-800/70 text-slate-200",
-  doing: "border-violet-400/50 bg-violet-600/20 text-violet-100",
-  done: "border-emerald-400/50 bg-emerald-600/20 text-emerald-100",
-  skipped: "border-amber-400/50 bg-amber-600/20 text-amber-100",
+  pending: "border-white/20 bg-slate-800/80 text-slate-200",
+  doing: "border-violet-400/40 bg-violet-500/15 text-violet-100",
+  done: "border-emerald-400/40 bg-emerald-500/15 text-emerald-100",
+  skipped: "border-amber-400/40 bg-amber-500/15 text-amber-100",
 };
 
 function formatTwoDigits(value: number): string {
@@ -470,68 +470,59 @@ export function RoutinesClient({ initialSummary }: { initialSummary: HabitSummar
   return (
     <>
       {contextHolder}
-      <div className="relative min-h-screen overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.32),_rgba(15,23,42,0.95))]" />
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(76,29,149,0.18)_0%,rgba(30,64,175,0.12)_38%,transparent_76%)]" />
-          <div className="absolute left-[-10%] top-1/3 h-[420px] w-[420px] rounded-full bg-violet-600/25 blur-[160px]" />
-          <div className="absolute right-[-12%] top-1/4 h-[360px] w-[360px] rounded-full bg-indigo-500/25 blur-[200px]" />
-        </div>
-
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.back()}
-                className="border-white/15 bg-slate-950/70 text-white/80 hover:bg-slate-900/70"
-              >
-                返回
-              </Button>
-              <span className="text-xs text-slate-400">
-                {summary.date} · {summary.timezone}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refresh}
-                disabled={isRefreshing}
-                className="border-violet-400/60 text-violet-100 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isRefreshing ? "刷新中..." : "刷新清单"}
-              </Button>
-            </div>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.back()}
+              className="border-white/20 bg-slate-900/70 text-slate-200 hover:bg-slate-800"
+            >
+              返回
+            </Button>
+            <span className="text-xs text-slate-400">
+              {summary.date} · {summary.timezone}
+            </span>
           </div>
-
-          <Card className="border-white/12 bg-slate-950/70 text-slate-100 shadow-[0_28px_80px_rgba(76,29,149,0.35)] backdrop-blur-xl">
-            <CardHeader className="space-y-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <CardTitle className="text-2xl text-white">今日习惯清单</CardTitle>
-                  <CardDescription className="text-sm text-slate-200">
-                    将高效专注、复盘整理与放松收尾结合，保持稳定节奏。
-                  </CardDescription>
-                </div>
-                <div className="rounded-xl border border-violet-500/40 bg-violet-600/20 px-4 py-2 text-sm text-violet-100">
-                  完成 {summary.totals.completedCount}/{summary.totals.totalCount} · 进度 {totalProgress}%
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Progress value={totalProgress} className="h-2 bg-slate-800" />
-                <div className="flex flex-wrap gap-4 text-xs text-slate-300">
-                  <span>计划时长 {summary.totals.plannedMinutes} 分钟</span>
-                  <span>已完成 {summary.totals.actualMinutes} 分钟</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {orderedItems.map(renderHabitCard)}
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refresh}
+              disabled={isRefreshing}
+              className="border-violet-400/60 text-violet-200 hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isRefreshing ? "刷新中..." : "刷新清单"}
+            </Button>
+          </div>
         </div>
+
+        <Card className="border-white/10 bg-slate-900/80 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.55)]">
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle className="text-2xl">今日习惯清单</CardTitle>
+                <CardDescription className="text-sm text-slate-300">
+                  将高效专注、复盘整理与放松收尾结合，保持稳定节奏。
+                </CardDescription>
+              </div>
+              <div className="rounded-xl border border-violet-500/40 bg-violet-600/15 px-4 py-2 text-sm text-violet-100">
+                完成 {summary.totals.completedCount}/{summary.totals.totalCount} · 进度 {totalProgress}%
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Progress value={totalProgress} className="h-2 bg-slate-800" />
+              <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+                <span>计划时长 {summary.totals.plannedMinutes} 分钟</span>
+                <span>已完成 {summary.totals.actualMinutes} 分钟</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {orderedItems.map(renderHabitCard)}
+          </CardContent>
+        </Card>
       </div>
 
       {timerDisplay}
