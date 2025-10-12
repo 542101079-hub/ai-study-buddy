@@ -74,7 +74,7 @@ export default function HomePage() {
                 你的 AI 智能学习搭子
               </h1>
               <p className="max-w-xl text-base text-white/88 sm:text-lg">
-                从规划到答疑，从进度追踪到就业进阶，一位始终在线的 AI 学伴，帮助你把每一次练习都对准目标。
+                从规划到答疑，从进度追踪到情感激励，一位始终在线的 AI 学伴，帮助你把每一次练习都对准目标。
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
