@@ -62,8 +62,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const minutes = actualMinutes ?? run.planned_minutes ?? 0;
   const nowIso = habitNowIso();
+  let minutes: number;
+
+  if (typeof actualMinutes === "number") {
+    minutes = actualMinutes;
+  } else if (run.started_at) {
+    const started = new Date(run.started_at).getTime();
+    const nowMs = new Date(nowIso).getTime();
+    const diffMinutes = Math.max(0, Math.round((nowMs - started) / 60000));
+    minutes = diffMinutes > 0 ? diffMinutes : run.planned_minutes ?? 0;
+  } else {
+    minutes = run.planned_minutes ?? 0;
+  }
+
+  minutes = Math.min(1440, Math.max(1, minutes));
   const meta = mergeHabitMeta(run.meta, habitCode, {
     lastCompletedAt: nowIso,
     lastActualMinutes: minutes,
