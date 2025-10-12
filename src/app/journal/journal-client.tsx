@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -148,6 +149,7 @@ export function JournalClient({
   const [toneHover, setToneHover] = useState<Tone | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -336,6 +338,17 @@ export function JournalClient({
 
         <section className="col-span-12 lg:col-span-8">
           <div className="grid gap-5 rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl backdrop-blur-md">
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                className="inline-flex items-center gap-2 rounded-xl border-white/15 bg-slate-800/70 px-4 py-2 text-sm text-slate-200 hover:border-white/25 hover:bg-slate-700/60 hover:text-white"
+              >
+                <span aria-hidden="true">←</span>
+                返回
+              </Button>
+            </div>
             <header className="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-slate-800/70 px-5 py-4 shadow-inner md:flex-row md:items-center">
               <div>
                 <p className="text-sm font-medium text-white">{tenantName}</p>
