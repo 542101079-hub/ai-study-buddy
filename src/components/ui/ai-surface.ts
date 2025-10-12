@@ -5,10 +5,11 @@ export const aiPageBg =
   "linear-gradient(180deg,#16143a_0%,#0c1124_55%,#090d20_100%)]";
 
 export const aiCard =
-  "rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-md shadow-[0_30px_80px_rgba(15,23,42,0.45)]";
+  "rounded-2xl border border-white/10 bg-gradient-to-br from-[#352b6c]/85 via-[#2b265b]/80 to-[#1f1b47]/85 " +
+  "backdrop-blur-md shadow-[0_30px_80px_rgba(25,32,68,0.55)]";
 
 export const aiSubCard =
-  "rounded-xl border border-white/10 bg-slate-800/60 backdrop-blur-md";
+  "rounded-xl border border-white/10 bg-gradient-to-br from-[#2d255f]/80 via-[#25224f]/75 to-[#1a1a3d]/80 backdrop-blur-md";
 
 export const aiPrimaryBtn =
   "inline-flex items-center justify-center rounded-lg px-3.5 py-2 font-medium " +
