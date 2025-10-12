@@ -461,7 +461,6 @@ export function JournalClient({
                       >
                         {sending ? "发送中..." : "发送"}
                       </Button>
-                      <ToneSelect />
                     </div>
                   </div>
                   <p className="mt-2 text-xs text-slate-500">
@@ -494,18 +493,5 @@ function BadgeCard({ label, unlocked }: { label: string; unlocked?: boolean }) {
         <div className="mt-1 text-[10px]">未解锁</div>
       )}
     </div>
-  );
-}
-
-function ToneSelect() {
-  return (
-    <select
-      className="rounded-lg border border-white/10 bg-slate-900/80 px-2 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
-      defaultValue="healing"
-    >
-      <option value="strict">严肃型</option>
-      <option value="healing">治愈型</option>
-      <option value="social">社交型</option>
-    </select>
   );
 }
