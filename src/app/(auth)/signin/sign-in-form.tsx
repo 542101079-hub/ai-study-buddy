@@ -324,9 +324,7 @@ export function SignInForm() {
           />
           <span>记住我</span>
         </label>
-        <Link href="/" className="text-violet-200 transition hover:text-white">
-          忘记密码？
-        </Link>
+        <span />
       </div>
 
       {isTenantStage && (
