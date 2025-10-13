@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { supabaseAdmin } from "@/lib/supabase/server";
 import { loadTenantScopedProfile } from "./tenant-context";
 import { getUserPermissions, type UserRole } from "./permissions";
 import type { Database } from "@/db/types";
@@ -33,7 +34,10 @@ type AdminRouteHandler<T = any> = (
 export function withAdminRoute<T = any>(handler: AdminRouteHandler<T>) {
   return async (request: NextRequest, context: T) => {
     try {
-      const supabase = createRouteHandlerClient<Database>({ cookies });
+      const cookieStore = await cookies();
+      const supabase = createRouteHandlerClient<Database>({
+        cookies: () => cookieStore,
+      });
       
       // 检查用户是否已登录
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -46,7 +50,7 @@ export function withAdminRoute<T = any>(handler: AdminRouteHandler<T>) {
       }
 
       // 加载用户profile
-      const profile = await loadTenantScopedProfile(supabase, session.user.id);
+      const profile = await loadTenantScopedProfile(supabaseAdmin, session.user.id);
       
       if (!profile) {
         return NextResponse.json(

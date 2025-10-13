@@ -6,6 +6,7 @@ const {
   getSessionMock,
   createRouteHandlerClientMock,
   loadTenantScopedProfileMock,
+  supabaseAdminStub,
 } = vi.hoisted(() => {
   const jsonMock = vi.fn((body: unknown, init?: ResponseInit) => ({ body, init }));
   const cookiesMock = vi.fn();
@@ -16,12 +17,14 @@ const {
     },
   }));
   const tenantProfileMock = vi.fn();
+  const supabaseAdminMock = { marker: "admin-client" };
   return {
     jsonSpy: jsonMock,
     cookiesSpy: cookiesMock,
     getSessionMock: sessionMock,
     createRouteHandlerClientMock: createClientMock,
     loadTenantScopedProfileMock: tenantProfileMock,
+    supabaseAdminStub: supabaseAdminMock,
   };
 });
 
@@ -45,7 +48,11 @@ vi.mock("./tenant-context", () => ({
 }));
 
 // vitest needs the module mocks declared before importing the module under test.
-import { withAdminRoute } from "./permissions";
+vi.mock("@/lib/supabase/server", () => ({
+  supabaseAdmin: supabaseAdminStub,
+}));
+
+import { withAdminRoute } from "./server-guards";
 
 describe("withAdminRoute", () => {
   beforeEach(() => {
@@ -61,33 +68,47 @@ describe("withAdminRoute", () => {
 
     const result = await guard({} as never, {} as never);
 
-    expect(result).toEqual({ body: { message: "Unauthorized" }, init: { status: 401 } });
-    expect(jsonSpy).toHaveBeenCalledWith({ message: "Unauthorized" }, { status: 401 });
+    expect(result).toEqual({ body: { message: "Authentication required" }, init: { status: 401 } });
+    expect(jsonSpy).toHaveBeenCalledWith({ message: "Authentication required" }, { status: 401 });
     expect(handler).not.toHaveBeenCalled();
     expect(loadTenantScopedProfileMock).not.toHaveBeenCalled();
   });
 
   it("returns 403 for non-admin profiles", async () => {
-    getSessionMock.mockResolvedValue({ data: { session: { user: { id: "user-1" } } } });
-    loadTenantScopedProfileMock.mockResolvedValue({ id: "user-1", tenantId: "tenant-1", role: "user" });
+    getSessionMock.mockResolvedValue({ data: { session: { user: { id: "user-1" } } }, error: null });
+    loadTenantScopedProfileMock.mockResolvedValue({
+      id: "user-1",
+      tenant_id: "tenant-1",
+      role: "user",
+      username: "user1",
+      full_name: null,
+      avatar_url: null,
+    });
 
     const handler = vi.fn();
     const guard = withAdminRoute(handler);
 
     const result = await guard({} as never, {} as never);
 
-    expect(result).toEqual({ body: { message: "You do not have permission to access this resource" }, init: { status: 403 } });
+    expect(result).toEqual({ body: { message: "Insufficient permissions" }, init: { status: 403 } });
     expect(jsonSpy).toHaveBeenCalledWith(
-      { message: "You do not have permission to access this resource" },
+      { message: "Insufficient permissions" },
       { status: 403 },
     );
     expect(handler).not.toHaveBeenCalled();
-    expect(loadTenantScopedProfileMock).toHaveBeenCalledWith(expect.anything(), "user-1");
+    expect(loadTenantScopedProfileMock).toHaveBeenCalledWith(supabaseAdminStub, "user-1");
   });
 
   it("allows admin profiles to hit the handler", async () => {
-    getSessionMock.mockResolvedValue({ data: { session: { user: { id: "admin-1" } } } });
-    loadTenantScopedProfileMock.mockResolvedValue({ id: "admin-1", tenantId: "tenant-1", role: "admin" });
+    getSessionMock.mockResolvedValue({ data: { session: { user: { id: "admin-1" } } }, error: null });
+    loadTenantScopedProfileMock.mockResolvedValue({
+      id: "admin-1",
+      tenant_id: "tenant-1",
+      role: "admin",
+      username: "admin",
+      full_name: "Admin User",
+      avatar_url: null,
+    });
 
     const handler = vi.fn(async () => new Response("ok", { status: 200 }));
     const guard = withAdminRoute(handler);
@@ -100,7 +121,14 @@ describe("withAdminRoute", () => {
       { params: { example: true } },
       {
         supabase: expect.any(Object),
-        profile: { id: "admin-1", tenantId: "tenant-1", role: "admin" },
+        profile: {
+          id: "admin-1",
+          tenant_id: "tenant-1",
+          role: "admin",
+          username: "admin",
+          full_name: "Admin User",
+          avatar_url: null,
+        },
       },
     );
     expect(response).toBeInstanceOf(Response);

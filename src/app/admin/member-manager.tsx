@@ -111,7 +111,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
 
       if (!response.ok) {
         setFieldErrors(result?.fieldErrors ?? {});
-        setError(result?.message ?? "创建成员失败，请稍后再试");
+        setError(result?.message ?? "创建管理员失败，请稍后再试");
         return;
       }
 
@@ -123,7 +123,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
       setFormValues({ name: "", email: "", password: "", username: "" });
     } catch (error) {
       console.error("[AdminInviteForm] create member failed", error);
-      setError("创建成员失败，请稍后再试");
+      setError("创建管理员失败，请稍后再试");
     } finally {
       setIsSubmitting(false);
     }
@@ -149,7 +149,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               value={formValues.name}
               onChange={handleChange}
               disabled={isSubmitting}
-              placeholder="例如：李同学"
+              placeholder="例如：张同学"
               className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
               required
             />
@@ -208,7 +208,7 @@ function AdminInviteForm({ onCreated, setMessage, setError }: AdminInviteFormPro
               value={formValues.username}
               onChange={handleChange}
               disabled={isSubmitting}
-              placeholder="不填写将自动生成"
+              placeholder="留空将自动生成"
               className="border-white/20 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus-visible:ring-violet-500"
             />
             {fieldErrors.username && (
@@ -271,12 +271,12 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
     }
 
     if (hasRoleChange && !hasPermission(currentUserRole, "canChangeUserRoles")) {
-      setError("当前账号没有权限调整角色");
+      setError("当前账号没有权限变更角色");
       return;
     }
 
     if (hasRoleChange && !canChangeRole(currentUserRole, target.role, target.draftRole)) {
-      setError("当前账号没有权限调整到该角色");
+      setError("当前账号没有权限调整该角色");
       return;
     }
 
@@ -446,3 +446,4 @@ export function MemberManager({ initialMembers, currentUserId, currentUserRole }
     </div>
   );
 }
+

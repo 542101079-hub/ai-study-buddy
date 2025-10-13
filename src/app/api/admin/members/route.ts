@@ -40,7 +40,7 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
     try {
       payload = await request.json();
     } catch {
-      return NextResponse.json({ message: "�޷���ȡ�ύ����" }, { status: 400 });
+      return NextResponse.json({ message: "无法解析提交的数据" }, { status: 400 });
     }
 
     const parsed = registerSchema.safeParse(payload);
@@ -48,7 +48,7 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
     if (!parsed.success) {
       return NextResponse.json(
         {
-          message: "ע����Ϣ����",
+          message: "提交信息有误",
           fieldErrors: formatValidationErrors(parsed.error),
         },
         { status: 400 },
@@ -72,8 +72,8 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
       if (status === 422 || status === 409) {
         return NextResponse.json(
           {
-            message: "�����ѱ�ʹ��",
-            fieldErrors: { email: "��ʹ���µ�����" },
+            message: "邮箱已被使用",
+            fieldErrors: { email: "邮箱已被使用" },
           },
           { status: 409 },
         );
@@ -81,7 +81,7 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
 
       console.error("[api/admin/members] createUser failed", createUserError);
       return NextResponse.json(
-        { message: "��������Աʧ�ܣ����Ժ�����" },
+        { message: "创建管理员失败，请稍后再试" },
         { status: 500 },
       );
     }
@@ -89,7 +89,7 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
     const user = createUserData.user;
     if (!user) {
       return NextResponse.json(
-        { message: "��������Աʧ�ܣ����Ժ�����" },
+        { message: "创建管理员失败，请稍后再试" },
         { status: 500 },
       );
     }
@@ -110,8 +110,8 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
       if ((profileError as { code?: string } | null)?.code === "23505") {
         return NextResponse.json(
           {
-            message: "�û����ѱ�ʹ��",
-            fieldErrors: { username: "���û����ѱ�ռ�ã��뻻һ��" },
+            message: "用户名已被占用",
+            fieldErrors: { username: "该用户名已被使用，请更换" },
           },
           { status: 409 },
         );
@@ -119,14 +119,14 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
 
       console.error("[api/admin/members] insertProfile failed", profileError);
       return NextResponse.json(
-        { message: "��������Աʧ�ܣ����Ժ�����" },
+        { message: "创建管理员失败，请稍后再试" },
         { status: 500 },
       );
     }
 
     return NextResponse.json(
       {
-        message: "����Ա�����ɹ�",
+        message: "管理员创建成功",
         member: memberProfile,
       },
       { status: 201 },
@@ -134,8 +134,9 @@ export const POST = withAdminRoute(async (request: NextRequest, _context, { prof
   } catch (error) {
     console.error("[api/admin/members] POST unexpected error:", error);
     return NextResponse.json(
-      { message: "��������Աʧ�ܣ����Ժ�����" },
+      { message: "创建管理员失败，请稍后再试" },
       { status: 500 },
     );
   }
 });
+
