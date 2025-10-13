@@ -1,3 +1,4 @@
+const STATS_WINDOW_DAYS = 30;
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -5,6 +6,7 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { loadTenantSummary, type TenantSummary } from "@/lib/auth/tenant-context";
+import { getLearningStats, type LearningStats } from "@/lib/learning/stats";
 import {
   Card,
   CardContent,
@@ -17,46 +19,27 @@ import { createServerSupabaseClient, getServerSession, supabaseAdmin } from "@/l
 import { LogoutButton } from "./logout-button";
 import { QuickActionNavigate } from "./quick-action-navigate";
 
-const HIGHLIGHTS = [
-  {
-    title: "专注时长",
-    value: "6.8h",
-    description: "较上周提升 12%",
-  },
-  {
-    title: "完成计划",
-    value: "5",
-    description: "超出本周目标进度",
-  },
-  {
-    title: "平均时长",
-    value: "2.5h",
-    description: "已保持 9 天连续学习",
-  },
-];
-
 const QUICK_ACTIONS = [
   {
     title: "查看学习计划",
-    description: "快速浏览计划进度，安排接下来的学习任务。",
+    description: "整理当前的学习计划，把握节奏查缺补漏",
     cta: "查看计划",
     href: "/learning/plans",
   },
   {
-    title: "开始下一次学习",
-    description: "打开与 AI 学习搭子的智能答疑页面，随时提问。",
-    cta: "与 AI 学习搭子对话",
+    title: "开始一段学习",
+    description: "使用 AI 学习助手开启对话式学习，随时复盘巩固",
+    cta: "和 AI 学习助手对话",
     href: "/assistant",
     external: true,
   },
   {
     title: "记录学习日志",
-    description: "及时整理关键收获与思考，沉淀每一次成长。",
-    cta: "添加笔记",
+    description: "及时总结关键收获与反思，沉淀每一次成长",
+    cta: "撰写日志",
     href: "/journal",
   },
 ];
-
 export default async function DashboardPage() {
   const session = await getServerSession();
 
@@ -123,6 +106,15 @@ export default async function DashboardPage() {
   // 如果没有profile数据，显示提示信息
   const showProfileWarning = !profileData;
 
+  let learningStats: LearningStats | null = null;
+  try {
+    learningStats = await getLearningStats(supabaseAdmin, session.user.id, { periodDays: STATS_WINDOW_DAYS });
+  } catch (statsError) {
+    console.error("[dashboard] load learning stats failed", statsError);
+  }
+
+  const highlightCards = buildHighlightCards(learningStats, STATS_WINDOW_DAYS);
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 -z-10">
@@ -185,7 +177,7 @@ export default async function DashboardPage() {
             </div>
           )}
           <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {HIGHLIGHTS.map((item) => (
+            {highlightCards.map((item) => (
               <Card
                 key={item.title}
                 className="border-violet-800/60 bg-gradient-to-br from-violet-900/75 via-purple-800/65 to-indigo-900/75 text-white backdrop-blur-xl"
@@ -326,5 +318,75 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
+type HighlightCard = {
+  title: string;
+  value: string;
+  description: string;
+};
+
+function buildHighlightCards(stats: LearningStats | null, windowDays: number): HighlightCard[] {
+  const windowLabel = `近 ${windowDays} 天`;
+  const totalStudyMinutes = stats?.totalStudyTime ?? 0;
+  const averageStudyMinutes = stats?.averageStudyTime ?? 0;
+  const studyDays = stats?.studyDays ?? 0;
+  const completedTasks = stats?.completedTasks ?? 0;
+  const totalTasks = stats?.totalTasks ?? 0;
+  const completionRate = stats?.completionRate ?? 0;
+
+  return [
+    {
+      title: "专注时长",
+      value: formatHourValue(totalStudyMinutes),
+      description:
+        totalStudyMinutes > 0
+          ? `${windowLabel}共学习 ${formatDurationText(totalStudyMinutes)}`
+          : "近期还没有学习记录",
+    },
+    {
+      title: "完成计划",
+      value: completedTasks.toString(),
+      description:
+        totalTasks > 0 ? `任务完成率 ${completionRate}%` : "暂无任务记录",
+    },
+    {
+      title: "平均时长",
+      value: formatHourValue(averageStudyMinutes),
+      description:
+        studyDays > 0
+          ? `已保持 ${studyDays} 天连续学习`
+          : "还没有连续学习记录",
+    },
+  ];
+}
+
+function formatHourValue(minutes: number): string {
+  if (minutes <= 0) {
+    return "0h";
+  }
+
+  const hours = minutes / 60;
+  if (hours >= 1) {
+    const rounded = Math.round(hours * 10) / 10;
+    return `${rounded.toString().replace(/\\.0$/, "")}h`;
+  }
+
+  return `${minutes}min`;
+}
+
+function formatDurationText(minutes: number): string {
+  if (minutes <= 0) {
+    return "0 分钟";
+  }
+
+  if (minutes < 60) {
+    return `${minutes} 分钟`;
+  }
+
+  const hours = Math.round((minutes / 60) * 10) / 10;
+  return `${hours.toString().replace(/\\.0$/, "")} 小时`;
+}
+
+
 
 
